@@ -4,6 +4,7 @@ create table if not exists public.bookings (
   id uuid primary key default gen_random_uuid(),
   customer_name text not null,
   phone text not null,
+  gender text not null default '미선택',
   service text not null,
   date date not null,
   time_label text not null,
@@ -17,21 +18,23 @@ create index if not exists bookings_date_time_idx
 
 alter table public.bookings enable row level security;
 
--- Public insert (customers can create bookings)
-create policy if not exists "bookings_insert_public"
+drop policy if exists bookings_insert_public on public.bookings;
+drop policy if exists bookings_read_public on public.bookings;
+drop policy if exists bookings_update_public on public.bookings;
+
+create policy bookings_insert_public
   on public.bookings
   for insert
   to anon, authenticated
   with check (true);
 
--- Public read/update (temporary until admin auth UI is added)
-create policy if not exists "bookings_read_public"
+create policy bookings_read_public
   on public.bookings
   for select
   to anon, authenticated
   using (true);
 
-create policy if not exists "bookings_update_public"
+create policy bookings_update_public
   on public.bookings
   for update
   to anon, authenticated

@@ -7,6 +7,7 @@ class Booking {
     required this.id,
     required this.customerName,
     required this.phone,
+    required this.gender,
     required this.service,
     required this.date,
     required this.timeLabel,
@@ -19,6 +20,7 @@ class Booking {
   final String id;
   final String customerName;
   final String phone;
+  final String gender;
   final String service;
   final DateTime date;
   final String timeLabel;
@@ -34,6 +36,7 @@ class Booking {
       id: id,
       customerName: customerName,
       phone: phone,
+      gender: gender,
       service: service,
       date: date,
       timeLabel: timeLabel,
@@ -49,6 +52,7 @@ class Booking {
       'id': id,
       'customerName': customerName,
       'phone': phone,
+      'gender': gender,
       'service': service,
       'date': date.toIso8601String(),
       'timeLabel': timeLabel,
@@ -63,6 +67,7 @@ class Booking {
     return {
       'customer_name': customerName,
       'phone': phone,
+      'gender': gender,
       'service': service,
       'date': date.toIso8601String().split('T').first,
       'time_label': timeLabel,
@@ -77,6 +82,7 @@ class Booking {
       id: json['id'] as String,
       customerName: json['customer_name'] as String,
       phone: json['phone'] as String,
+      gender: json['gender'] as String? ?? '미선택',
       service: json['service'] as String,
       date: DateTime.parse(json['date'] as String),
       timeLabel: json['time_label'] as String,
@@ -95,6 +101,7 @@ class Booking {
       id: json['id'] as String,
       customerName: json['customerName'] as String,
       phone: json['phone'] as String,
+      gender: json['gender'] as String? ?? '미선택',
       service: json['service'] as String,
       date: DateTime.parse(json['date'] as String),
       timeLabel: json['timeLabel'] as String,

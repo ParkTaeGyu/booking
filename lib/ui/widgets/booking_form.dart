@@ -70,6 +70,7 @@ class _BookingFormState extends State<BookingForm> {
   DateTime _selectedDate = DateTime.now();
   String _selectedService = '';
   String _selectedTime = '';
+  String _selectedGender = '남성';
 
   @override
   void initState() {
@@ -159,6 +160,13 @@ class _BookingFormState extends State<BookingForm> {
               validator: (value) => value == null || value.trim().isEmpty
                   ? '연락처를 입력해주세요.'
                   : null,
+            ),
+            const SizedBox(height: 12),
+            _GenderPicker(
+              value: _selectedGender,
+              onChanged: (value) {
+                setState(() => _selectedGender = value);
+              },
             ),
             const SizedBox(height: 12),
             DropdownField(
@@ -289,6 +297,7 @@ class _BookingFormState extends State<BookingForm> {
       id: 'bk-${DateTime.now().millisecondsSinceEpoch}',
       customerName: _nameController.text.trim(),
       phone: _phoneController.text.trim(),
+      gender: _selectedGender,
       service: _selectedService,
       date: _selectedDate,
       timeLabel: _selectedTime,
@@ -304,6 +313,87 @@ class _BookingFormState extends State<BookingForm> {
       SnackBar(
         content: Text(
           widget.autoApprove ? '예약이 확정되었습니다.' : '예약 신청이 완료되었습니다.',
+        ),
+      ),
+    );
+  }
+}
+
+class _GenderPicker extends StatelessWidget {
+  const _GenderPicker({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('성별', style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            _GenderChip(
+              label: '남성',
+              selected: value == '남성',
+              onTap: () => onChanged('남성'),
+            ),
+            const SizedBox(width: 8),
+            _GenderChip(
+              label: '여성',
+              selected: value == '여성',
+              onTap: () => onChanged('여성'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _GenderChip extends StatelessWidget {
+  const _GenderChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: selected
+                ? Theme.of(context).colorScheme.secondary
+                : const Color(0xFFF7F4EF),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected
+                  ? Theme.of(context).colorScheme.secondary
+                  : Colors.transparent,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: selected ? Colors.black : Colors.black87,
+                  ),
+            ),
+          ),
         ),
       ),
     );

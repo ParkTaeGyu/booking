@@ -361,7 +361,7 @@ class _AdminBookingCard extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              '연락처 ${booking.phone}',
+              '연락처 ${booking.phone} · ${booking.gender}',
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
