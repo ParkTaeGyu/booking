@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'services/booking_storage.dart';
+import 'services/supabase_booking_repository.dart';
 import 'state/booking_store.dart';
 import 'ui/pages/home_page.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
+  await Supabase.initialize(
+    url: dotenv.env['SUPABASE_URL'] ?? '',
+    anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
+  );
   runApp(const SalonBookingApp());
 }
 
@@ -21,7 +30,10 @@ class _SalonBookingAppState extends State<SalonBookingApp> {
   @override
   void initState() {
     super.initState();
-    _store = BookingStore(BookingStorage());
+    _store = BookingStore(
+      repository: SupabaseBookingRepository(),
+      settingsStorage: BookingStorage(),
+    );
     _store.load();
   }
 

@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../models/booking.dart';
+import '../services/booking_repository.dart';
 import '../services/booking_storage.dart';
 
 class BookingStore extends ChangeNotifier {
-  BookingStore(this._storage);
+  BookingStore({
+    required BookingRepository repository,
+    required BookingStorage settingsStorage,
+  })  : _repository = repository,
+        _settingsStorage = settingsStorage;
 
-  final BookingStorage _storage;
+  final BookingRepository _repository;
+  final BookingStorage _settingsStorage;
   bool _autoApprove = true;
   bool _ready = false;
   final List<Booking> _bookings = [];
@@ -21,8 +27,8 @@ class BookingStore extends ChangeNotifier {
       _bookings.where((b) => b.status == BookingStatus.confirmed).length;
 
   Future<void> load() async {
-    final loadedBookings = await _storage.loadBookings();
-    final autoApprove = await _storage.loadAutoApprove();
+    final loadedBookings = await _repository.fetchAll();
+    final autoApprove = await _settingsStorage.loadAutoApprove();
 
     _bookings
       ..clear()
@@ -37,20 +43,20 @@ class BookingStore extends ChangeNotifier {
   Future<void> setAutoApprove(bool value) async {
     _autoApprove = value;
     notifyListeners();
-    await _storage.saveAutoApprove(value);
+    await _settingsStorage.saveAutoApprove(value);
   }
 
   Future<void> addBooking(Booking booking) async {
-    _bookings.insert(0, booking);
+    final created = await _repository.create(booking);
+    _bookings.insert(0, created);
     notifyListeners();
-    await _storage.saveBookings(_bookings);
   }
 
   Future<void> updateStatus(String id, BookingStatus status) async {
     final index = _bookings.indexWhere((b) => b.id == id);
     if (index == -1) return;
+    await _repository.updateStatus(id, status);
     _bookings[index] = _bookings[index].copyWith(status: status);
     notifyListeners();
-    await _storage.saveBookings(_bookings);
   }
 }

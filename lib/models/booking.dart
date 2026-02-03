@@ -59,6 +59,37 @@ class Booking {
     };
   }
 
+  Map<String, dynamic> toInsertMap() {
+    return {
+      'customer_name': customerName,
+      'phone': phone,
+      'service': service,
+      'date': date.toIso8601String().split('T').first,
+      'time_label': timeLabel,
+      'status': status.name,
+      'created_at': createdAt.toIso8601String(),
+      'auto_approved': autoApproved,
+    };
+  }
+
+  static Booking fromMap(Map<String, dynamic> json) {
+    return Booking(
+      id: json['id'] as String,
+      customerName: json['customer_name'] as String,
+      phone: json['phone'] as String,
+      service: json['service'] as String,
+      date: DateTime.parse(json['date'] as String),
+      timeLabel: json['time_label'] as String,
+      status: BookingStatus.values.firstWhere(
+        (status) => status.name == json['status'],
+        orElse: () => BookingStatus.pending,
+      ),
+      createdAt: DateTime.parse(json['created_at'] as String),
+      autoApproved: json['auto_approved'] as bool? ?? false,
+      note: json['note'] as String?,
+    );
+  }
+
   static Booking fromJson(Map<String, dynamic> json) {
     return Booking(
       id: json['id'] as String,
