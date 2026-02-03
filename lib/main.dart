@@ -13,7 +13,7 @@ class SalonBookingApp extends StatefulWidget {
 
   @override
   State<SalonBookingApp> createState() => _SalonBookingAppState();
-}ㅊ
+}
 
 class _SalonBookingAppState extends State<SalonBookingApp> {
   late final BookingStore _store;
