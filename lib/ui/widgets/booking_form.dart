@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/booking.dart';
+import '../../utils/holiday_calendar.dart';
 import 'common.dart';
 import 'time_slot_picker.dart';
 import 'weekly_calendar.dart';
@@ -92,7 +93,7 @@ class _BookingFormState extends State<BookingForm> {
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
-    final slots = _generateSlots();
+    final slots = _generateSlotsForDate(_selectedDate);
 
     return Padding(
       padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
@@ -138,6 +139,7 @@ class _BookingFormState extends State<BookingForm> {
                 });
               },
               isDisabled: _isDateDisabled,
+              isHoliday: (date) => isHoliday(date),
             ),
             const SizedBox(height: 16),
             InputField(
@@ -203,13 +205,22 @@ class _BookingFormState extends State<BookingForm> {
     );
   }
 
-  List<String> _generateSlots() {
+  List<String> _generateSlotsForDate(DateTime date) {
+    final isEarlyClose = isShortDay(date);
+    final lastHour = isEarlyClose ? 17 : 19;
+    final lastMinute = isEarlyClose ? 30 : 0;
+
     final slots = <String>[];
-    for (int hour = 10; hour < 19; hour++) {
-      slots.add('${hour.toString().padLeft(2, '0')}:00');
-      slots.add('${hour.toString().padLeft(2, '0')}:30');
+    for (int hour = 10; hour < lastHour; hour++) {
+      final hourLabel = hour.toString().padLeft(2, '0');
+      slots.add('$hourLabel:00');
+      slots.add('$hourLabel:30');
     }
-    slots.add('19:00');
+    final lastHourLabel = lastHour.toString().padLeft(2, '0');
+    slots.add('$lastHourLabel:00');
+    if (lastMinute == 30) {
+      slots.add('$lastHourLabel:30');
+    }
     return slots;
   }
 
@@ -247,7 +258,7 @@ class _BookingFormState extends State<BookingForm> {
   }
 
   List<String> _availableSlots(DateTime date) {
-    return _generateSlots()
+    return _generateSlotsForDate(date)
         .where((time) => !widget.bookings.any((booking) {
               return booking.status == BookingStatus.confirmed &&
                   _sameDay(booking.date, date) &&
