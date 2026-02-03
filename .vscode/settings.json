@@ -1,3 +1,6 @@
 {
-  "dart.flutterSdkPath": "/Users/parktaekyu/Documents/flutter"
+  "dart.flutterSdkPath": "/Users/parktaekyu/Documents/flutter",
+  "code-runner.executorMap": {
+    "dart": "echo \"Use Flutter Run and Debug (F5) instead of Code Runner\""
+  }
 }
