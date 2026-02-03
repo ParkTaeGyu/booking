@@ -4,6 +4,7 @@ import '../../state/booking_store.dart';
 import '../widgets/common.dart';
 import 'admin_page.dart';
 import 'customer_page.dart';
+import 'styles_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key, required this.store});
@@ -38,6 +39,13 @@ class HomePage extends StatelessWidget {
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
                                       builder: (_) => CustomerPage(store: store),
+                                    ),
+                                  );
+                                },
+                                onStylesTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const StylesPage(),
                                     ),
                                   );
                                 },
@@ -151,10 +159,12 @@ class _TopBar extends StatelessWidget {
 class _RouteTiles extends StatelessWidget {
   const _RouteTiles({
     required this.onCustomerTap,
+    required this.onStylesTap,
     required this.onAdminTap,
   });
 
   final VoidCallback onCustomerTap;
+  final VoidCallback onStylesTap;
   final VoidCallback onAdminTap;
 
   @override
@@ -164,9 +174,16 @@ class _RouteTiles extends StatelessWidget {
       _RouteCard(
         title: '예약 신청 (고객)',
         subtitle: '원하는 시간과 서비스를 선택해 예약을 신청합니다.',
-        bulletPoints: const ['30분 단위 예약', '자동확정 옵션', '요청사항 입력'],
+        bulletPoints: const ['30분 단위 예약', '자동확정 옵션', '시간 선택'],
         icon: Icons.event_available,
         onTap: onCustomerTap,
+      ),
+      _RouteCard(
+        title: '헤어 스타일 소개',
+        subtitle: '추천 스타일 10선을 사진과 함께 확인합니다.',
+        bulletPoints: const ['임시 이미지', '가격 안내', '카드형 레이아웃'],
+        icon: Icons.style,
+        onTap: onStylesTap,
       ),
       _RouteCard(
         title: '예약 관리 (관리자)',
@@ -183,6 +200,8 @@ class _RouteTiles extends StatelessWidget {
               Expanded(child: children[0]),
               const SizedBox(width: 16),
               Expanded(child: children[1]),
+              const SizedBox(width: 16),
+              Expanded(child: children[2]),
             ],
           )
         : ListView.separated(
