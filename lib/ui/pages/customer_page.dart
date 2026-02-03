@@ -24,11 +24,13 @@ class CustomerPage extends StatelessWidget {
               SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  child: BookingFormSection(
-                    services: BookingFormSection.defaultServices,
-                    autoApprove: store.autoApprove,
-                    bookings: store.bookings,
-                    onCreate: store.addBooking,
+                  child: SingleChildScrollView(
+                    child: BookingFormSection(
+                      services: BookingFormSection.defaultServices,
+                      autoApprove: store.autoApprove,
+                      bookings: store.bookings,
+                      onCreate: store.addBooking,
+                    ),
                   ),
                 ),
               ),
