@@ -1,0 +1,254 @@
+import 'package:flutter/material.dart';
+
+import '../../state/booking_store.dart';
+import '../widgets/common.dart';
+import 'admin_page.dart';
+import 'customer_page.dart';
+
+class HomePage extends StatelessWidget {
+  const HomePage({super.key, required this.store});
+
+  final BookingStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: store,
+      builder: (context, _) {
+        return Scaffold(
+          body: Stack(
+            children: [
+              const BackgroundShape(),
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Column(
+                    children: [
+                      _TopBar(
+                        autoApprove: store.autoApprove,
+                        onAutoApproveChanged: (value) {
+                          store.setAutoApprove(value);
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: store.ready
+                            ? _RouteTiles(
+                                onCustomerTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => CustomerPage(store: store),
+                                    ),
+                                  );
+                                },
+                                onAdminTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => AdminPage(store: store),
+                                    ),
+                                  );
+                                },
+                              )
+                            : const Center(child: CircularProgressIndicator()),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _TopBar extends StatelessWidget {
+  const _TopBar({
+    required this.autoApprove,
+    required this.onAutoApproveChanged,
+  });
+
+  final bool autoApprove;
+  final ValueChanged<bool> onAutoApproveChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Maison Bloom',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '미용실 예약 관리 대시보드',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.black54,
+                  ),
+            ),
+          ],
+        ),
+        const Spacer(),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: 20,
+                color: Colors.black.withValues(alpha: 0.08),
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.auto_awesome, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                '자동확정',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(width: 8),
+              Switch(
+                value: autoApprove,
+                onChanged: onAutoApproveChanged,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RouteTiles extends StatelessWidget {
+  const _RouteTiles({
+    required this.onCustomerTap,
+    required this.onAdminTap,
+  });
+
+  final VoidCallback onCustomerTap;
+  final VoidCallback onAdminTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isWide = MediaQuery.of(context).size.width >= 920;
+    final children = [
+      _RouteCard(
+        title: '예약 신청 (고객)',
+        subtitle: '원하는 시간과 서비스를 선택해 예약을 신청합니다.',
+        bulletPoints: const ['30분 단위 예약', '자동확정 옵션', '요청사항 입력'],
+        icon: Icons.event_available,
+        onTap: onCustomerTap,
+      ),
+      _RouteCard(
+        title: '예약 관리 (관리자)',
+        subtitle: '대기/확정/거절을 관리하고 예약을 정렬합니다.',
+        bulletPoints: const ['상태 필터', '정렬 기준', '승인/거절 처리'],
+        icon: Icons.dashboard_customize,
+        onTap: onAdminTap,
+      ),
+    ];
+
+    return isWide
+        ? Row(
+            children: [
+              Expanded(child: children[0]),
+              const SizedBox(width: 16),
+              Expanded(child: children[1]),
+            ],
+          )
+        : ListView.separated(
+            itemCount: children.length,
+            separatorBuilder: (context, _) => const SizedBox(height: 16),
+            itemBuilder: (context, index) => children[index],
+          );
+  }
+}
+
+class _RouteCard extends StatelessWidget {
+  const _RouteCard({
+    required this.title,
+    required this.subtitle,
+    required this.bulletPoints,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final List<String> bulletPoints;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .secondary
+                    .withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, size: 22, color: Colors.black87),
+            ),
+            const SizedBox(height: 12),
+            Text(title, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: Colors.black54),
+            ),
+            const SizedBox(height: 12),
+            for (final bullet in bulletPoints)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check, size: 16, color: Colors.black54),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        bullet,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: onTap,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: const Text('페이지 열기'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

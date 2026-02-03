@@ -1,0 +1,298 @@
+import 'package:flutter/material.dart';
+
+import '../../models/booking.dart';
+import 'common.dart';
+import 'time_slot_picker.dart';
+import 'weekly_calendar.dart';
+
+class BookingFormSection extends StatelessWidget {
+  const BookingFormSection({
+    super.key,
+    required this.services,
+    required this.autoApprove,
+    required this.bookings,
+    required this.onCreate,
+  });
+
+  static const defaultServices = [
+    '컷 + 스타일',
+    '펌',
+    '염색',
+    '클리닉 집중 케어',
+  ];
+
+  final List<String> services;
+  final bool autoApprove;
+  final List<Booking> bookings;
+  final ValueChanged<Booking> onCreate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: BookingForm(
+          services: services,
+          autoApprove: autoApprove,
+          bookings: bookings,
+          onCreate: onCreate,
+        ),
+      ),
+    );
+  }
+}
+
+class BookingForm extends StatefulWidget {
+  const BookingForm({
+    super.key,
+    required this.services,
+    required this.autoApprove,
+    required this.bookings,
+    required this.onCreate,
+  });
+
+  final List<String> services;
+  final bool autoApprove;
+  final List<Booking> bookings;
+  final ValueChanged<Booking> onCreate;
+
+  @override
+  State<BookingForm> createState() => _BookingFormState();
+}
+
+class _BookingFormState extends State<BookingForm> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _noteController = TextEditingController();
+  final PageController _weekController = PageController();
+
+  DateTime _selectedDate = DateTime.now();
+  String _selectedService = '';
+  String _selectedTime = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedService = widget.services.first;
+    _selectedDate = _normalizeDate(DateTime.now());
+    final available = _availableSlots(_selectedDate);
+    _selectedTime = available.isNotEmpty ? available.first : '';
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _noteController.dispose();
+    _weekController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final slots = _generateSlots();
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '예약 신청',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              widget.autoApprove
+                  ? '자동확정 설정이라 바로 확정됩니다.'
+                  : '관리자 승인 후 확정됩니다.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: Colors.black54),
+            ),
+            const SizedBox(height: 16),
+            WeeklyCalendar(
+              controller: _weekController,
+              selectedDate: _selectedDate,
+              onWeekChanged: (offset) {
+                final start = _startOfWeek(_normalizeDate(DateTime.now()))
+                    .add(Duration(days: offset * 7));
+                setState(() {
+                  if (!_isSameWeek(_selectedDate, start)) {
+                    _selectedDate = start;
+                  }
+                  final available = _availableSlots(_selectedDate);
+                  _selectedTime = available.isNotEmpty ? available.first : '';
+                });
+              },
+              onDateSelected: (date) {
+                setState(() {
+                  _selectedDate = date;
+                  final available = _availableSlots(_selectedDate);
+                  _selectedTime = available.isNotEmpty ? available.first : '';
+                });
+              },
+              isDisabled: _isDateDisabled,
+            ),
+            const SizedBox(height: 16),
+            InputField(
+              label: '이름',
+              controller: _nameController,
+              hint: '예) 김지아',
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? '이름을 입력해주세요.'
+                  : null,
+            ),
+            const SizedBox(height: 12),
+            InputField(
+              label: '연락처',
+              controller: _phoneController,
+              hint: '010-0000-0000',
+              keyboardType: TextInputType.phone,
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? '연락처를 입력해주세요.'
+                  : null,
+            ),
+            const SizedBox(height: 12),
+            DropdownField(
+              label: '서비스',
+              value: _selectedService,
+              items: widget.services,
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() => _selectedService = value);
+              },
+            ),
+            const SizedBox(height: 12),
+            TimeSlotPicker(
+              slots: slots,
+              selectedTime: _selectedTime,
+              isTaken: _isTaken,
+              onSelected: (time) {
+                setState(() => _selectedTime = time);
+              },
+            ),
+            const SizedBox(height: 12),
+            InputField(
+              label: '요청사항',
+              controller: _noteController,
+              hint: '예) 조용한 자리 선호',
+              maxLines: 3,
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: const Text('예약 신청'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<String> _generateSlots() {
+    final slots = <String>[];
+    for (int hour = 10; hour < 19; hour++) {
+      slots.add('${hour.toString().padLeft(2, '0')}:00');
+      slots.add('${hour.toString().padLeft(2, '0')}:30');
+    }
+    slots.add('19:00');
+    return slots;
+  }
+
+  bool _isTaken(String time) {
+    return widget.bookings.any((booking) {
+      return booking.status == BookingStatus.confirmed &&
+          _sameDay(booking.date, _selectedDate) &&
+          booking.timeLabel == time;
+    });
+  }
+
+  bool _sameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  DateTime _normalizeDate(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
+  }
+
+  DateTime _startOfWeek(DateTime date) {
+    return date.subtract(Duration(days: date.weekday - 1));
+  }
+
+  bool _isSameWeek(DateTime date, DateTime weekStart) {
+    final normalized = _normalizeDate(date);
+    return normalized.isAfter(weekStart.subtract(const Duration(days: 1))) &&
+        normalized.isBefore(weekStart.add(const Duration(days: 7)));
+  }
+
+  bool _isDateDisabled(DateTime date) {
+    final normalized = _normalizeDate(date);
+    final today = _normalizeDate(DateTime.now());
+    final lastDate = today.add(const Duration(days: 30));
+    return normalized.isBefore(today) || normalized.isAfter(lastDate);
+  }
+
+  List<String> _availableSlots(DateTime date) {
+    return _generateSlots()
+        .where((time) => !widget.bookings.any((booking) {
+              return booking.status == BookingStatus.confirmed &&
+                  _sameDay(booking.date, date) &&
+                  booking.timeLabel == time;
+            }))
+        .toList();
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+    if (_selectedTime.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('예약 시간을 선택해주세요.')),
+      );
+      return;
+    }
+    if (_isTaken(_selectedTime)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('해당 시간은 이미 예약되었습니다.')),
+      );
+      return;
+    }
+
+    final newBooking = Booking(
+      id: 'bk-${DateTime.now().millisecondsSinceEpoch}',
+      customerName: _nameController.text.trim(),
+      phone: _phoneController.text.trim(),
+      service: _selectedService,
+      date: _selectedDate,
+      timeLabel: _selectedTime,
+      status: widget.autoApprove
+          ? BookingStatus.confirmed
+          : BookingStatus.pending,
+      createdAt: DateTime.now(),
+      autoApproved: widget.autoApprove,
+      note: _noteController.text.trim(),
+    );
+
+    widget.onCreate(newBooking);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          widget.autoApprove ? '예약이 확정되었습니다.' : '예약 신청이 완료되었습니다.',
+        ),
+      ),
+    );
+  }
+}
