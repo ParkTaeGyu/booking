@@ -15,11 +15,13 @@ class BookingStore extends ChangeNotifier {
   final BookingStorage _settingsStorage;
   bool _autoApprove = true;
   bool _ready = false;
+  String? _lastError;
   final List<Booking> _bookings = [];
 
   bool get ready => _ready;
   bool get autoApprove => _autoApprove;
   List<Booking> get bookings => List.unmodifiable(_bookings);
+  String? get lastError => _lastError;
 
   int get pendingCount =>
       _bookings.where((b) => b.status == BookingStatus.pending).length;
@@ -27,17 +29,23 @@ class BookingStore extends ChangeNotifier {
       _bookings.where((b) => b.status == BookingStatus.confirmed).length;
 
   Future<void> load() async {
-    final loadedBookings = await _repository.fetchAll();
-    final autoApprove = await _settingsStorage.loadAutoApprove();
+    try {
+      final loadedBookings = await _repository.fetchAll();
+      final autoApprove = await _settingsStorage.loadAutoApprove();
 
-    _bookings
-      ..clear()
-      ..addAll(loadedBookings);
-    if (autoApprove != null) {
-      _autoApprove = autoApprove;
+      _bookings
+        ..clear()
+        ..addAll(loadedBookings);
+      if (autoApprove != null) {
+        _autoApprove = autoApprove;
+      }
+      _lastError = null;
+    } catch (error) {
+      _lastError = error.toString();
+    } finally {
+      _ready = true;
+      notifyListeners();
     }
-    _ready = true;
-    notifyListeners();
   }
 
   Future<void> setAutoApprove(bool value) async {

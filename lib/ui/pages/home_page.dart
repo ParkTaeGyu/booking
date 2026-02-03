@@ -34,28 +34,51 @@ class HomePage extends StatelessWidget {
                       const SizedBox(height: 16),
                       Expanded(
                         child: store.ready
-                            ? _RouteTiles(
-                                onCustomerTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => CustomerPage(store: store),
+                            ? Column(
+                                children: [
+                                  if (store.lastError != null)
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(12),
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.redAccent.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: Text(
+                                        '예약 데이터를 불러오지 못했습니다. Supabase 스키마/정책을 확인해주세요.',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(color: Colors.redAccent),
+                                      ),
                                     ),
-                                  );
-                                },
-                                onStylesTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => const StylesPage(),
+                                  Expanded(
+                                    child: _RouteTiles(
+                                      onCustomerTap: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) => CustomerPage(store: store),
+                                          ),
+                                        );
+                                      },
+                                      onStylesTap: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) => const StylesPage(),
+                                          ),
+                                        );
+                                      },
+                                      onAdminTap: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) => AdminPage(store: store),
+                                          ),
+                                        );
+                                      },
                                     ),
-                                  );
-                                },
-                                onAdminTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => AdminPage(store: store),
-                                    ),
-                                  );
-                                },
+                                  ),
+                                ],
                               )
                             : const Center(child: CircularProgressIndicator()),
                       ),
