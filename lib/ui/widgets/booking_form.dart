@@ -65,7 +65,6 @@ class _BookingFormState extends State<BookingForm> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _noteController = TextEditingController();
   final PageController _weekController = PageController();
 
   DateTime _selectedDate = DateTime.now();
@@ -85,7 +84,6 @@ class _BookingFormState extends State<BookingForm> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
-    _noteController.dispose();
     _weekController.dispose();
     super.dispose();
   }
@@ -180,13 +178,6 @@ class _BookingFormState extends State<BookingForm> {
               onSelected: (time) {
                 setState(() => _selectedTime = time);
               },
-            ),
-            const SizedBox(height: 12),
-            InputField(
-              label: '요청사항',
-              controller: _noteController,
-              hint: '예) 조용한 자리 선호',
-              maxLines: 3,
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -306,7 +297,6 @@ class _BookingFormState extends State<BookingForm> {
           : BookingStatus.pending,
       createdAt: DateTime.now(),
       autoApproved: widget.autoApprove,
-      note: _noteController.text.trim(),
     );
 
     widget.onCreate(newBooking);
