@@ -8,6 +8,7 @@ class WeeklyCalendar extends StatelessWidget {
     required this.onWeekChanged,
     required this.onDateSelected,
     required this.isDisabled,
+    required this.isHoliday,
   });
 
   final PageController controller;
@@ -15,6 +16,7 @@ class WeeklyCalendar extends StatelessWidget {
   final ValueChanged<int> onWeekChanged;
   final ValueChanged<DateTime> onDateSelected;
   final bool Function(DateTime) isDisabled;
+  final bool Function(DateTime) isHoliday;
 
   static const _dayLabels = ['월', '화', '수', '목', '금', '토', '일'];
 
@@ -68,6 +70,23 @@ class WeeklyCalendar extends StatelessWidget {
                       final date = weekStart.add(Duration(days: dayIndex));
                       final disabled = isDisabled(date);
                       final selected = _sameDay(date, selectedDate);
+                      final holiday = isHoliday(date);
+                      final isSunday = date.weekday == DateTime.sunday;
+                      final highlight = holiday || isSunday;
+                      final labelColor = disabled
+                          ? Colors.black26
+                          : selected
+                              ? Colors.white70
+                              : highlight
+                                  ? Colors.redAccent
+                                  : Colors.black54;
+                      final dayColor = disabled
+                          ? Colors.black26
+                          : selected
+                              ? Colors.white
+                              : highlight
+                                  ? Colors.redAccent
+                                  : Colors.black;
                       return Expanded(
                         child: GestureDetector(
                           onTap: disabled ? null : () => onDateSelected(date),
@@ -93,13 +112,7 @@ class WeeklyCalendar extends StatelessWidget {
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyMedium
-                                      ?.copyWith(
-                                        color: disabled
-                                            ? Colors.black26
-                                            : selected
-                                                ? Colors.white70
-                                                : Colors.black54,
-                                      ),
+                                      ?.copyWith(color: labelColor),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
@@ -108,12 +121,19 @@ class WeeklyCalendar extends StatelessWidget {
                                       .textTheme
                                       .titleLarge
                                       ?.copyWith(
-                                        color: disabled
-                                            ? Colors.black26
-                                            : selected
-                                                ? Colors.white
-                                                : Colors.black,
+                                        color: dayColor,
                                       ),
+                                ),
+                                const SizedBox(height: 4),
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    color: highlight
+                                        ? Colors.redAccent
+                                        : Colors.transparent,
+                                    shape: BoxShape.circle,
+                                  ),
                                 ),
                               ],
                             ),
