@@ -7,6 +7,27 @@
       "type": "dart",
       "flutterMode": "debug",
       "args": ["-d", "chrome"]
+    },
+    {
+      "name": "Flutter (Android Emulator)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "args": ["-d", "android"]
+    },
+    {
+      "name": "Flutter (iOS Simulator)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "deviceId": "00AABB0C-3C91-4CBF-9AF8-C846EAE5E5C8"
+    },
+    {
+      "name": "Flutter (iOS Simulator - iPhone 13 mini)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "deviceId": "A5A9F4EA-74A2-498A-9C9B-B4FFAFCEE6E4"
     }
   ]
 }
