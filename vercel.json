@@ -1,5 +1,5 @@
 {
-  "buildCommand": "curl -fsSL https://fvm.app/install.sh | bash && export PATH=\"$HOME/.fvm/default/bin:$PATH\" && fvm install && fvm use && fvm flutter build web --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY",
+  "buildCommand": "curl -fsSL https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.38.7-stable.tar.xz -o flutter.tar.xz && tar -xf flutter.tar.xz && export PATH=\"$PWD/flutter/bin:$PATH\" && flutter --version && flutter build web --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY",
   "outputDirectory": "build/web",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
