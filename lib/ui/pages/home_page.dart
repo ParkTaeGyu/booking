@@ -74,26 +74,10 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Maison Bloom',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '미용실 예약 관리 대시보드',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.black54,
-                  ),
-            ),
-          ],
-        ),
-        const Spacer(),
-        Container(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 720;
+        final toggleCard = Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -107,6 +91,7 @@ class _TopBar extends StatelessWidget {
             ],
           ),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.auto_awesome, size: 20),
               const SizedBox(width: 8),
@@ -121,8 +106,44 @@ class _TopBar extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ],
+        );
+
+        final titleBlock = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Maison Bloom',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '미용실 예약 관리 대시보드',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.black54,
+                  ),
+            ),
+          ],
+        );
+
+        if (isNarrow) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              titleBlock,
+              const SizedBox(height: 12),
+              SizedBox(width: double.infinity, child: toggleCard),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            titleBlock,
+            const Spacer(),
+            toggleCard,
+          ],
+        );
+      },
     );
   }
 }
