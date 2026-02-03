@@ -124,9 +124,11 @@ class _BookingFormState extends State<BookingForm> {
                 final start = _startOfWeek(_normalizeDate(DateTime.now()))
                     .add(Duration(days: offset * 7));
                 setState(() {
-                  if (!_isSameWeek(_selectedDate, start)) {
-                    _selectedDate = start;
-                  }
+                  final keepCurrent = _isSameWeek(_selectedDate, start) &&
+                      !_isDateDisabled(_selectedDate);
+                  final nextSelected =
+                      keepCurrent ? _selectedDate : _firstEnabledDate(start);
+                  _selectedDate = nextSelected;
                   final available = _availableSlots(_selectedDate);
                   _selectedTime = available.isNotEmpty ? available.first : '';
                 });
@@ -255,6 +257,16 @@ class _BookingFormState extends State<BookingForm> {
     final today = _normalizeDate(DateTime.now());
     final lastDate = today.add(const Duration(days: 30));
     return normalized.isBefore(today) || normalized.isAfter(lastDate);
+  }
+
+  DateTime _firstEnabledDate(DateTime weekStart) {
+    for (int i = 0; i < 7; i++) {
+      final date = weekStart.add(Duration(days: i));
+      if (!_isDateDisabled(date)) {
+        return date;
+      }
+    }
+    return weekStart;
   }
 
   List<String> _availableSlots(DateTime date) {
