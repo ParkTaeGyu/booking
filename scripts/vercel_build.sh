@@ -1,24 +1,18 @@
 #!/bin/sh
-set -eu
+set -eux
 
-FLUTTER_VERSION="3.38.7"
-ARCHIVE_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz"
+if [ -d flutter ]; then
+  cd flutter
+  git fetch --depth 1 origin stable
+  git reset --hard FETCH_HEAD
+  cd ..
+else
+  git clone --depth 1 -b stable https://github.com/flutter/flutter.git
+fi
 
-python3 - <<PY
-import tarfile
-import urllib.request
+./flutter/bin/flutter --version
+./flutter/bin/flutter config --enable-web
 
-url = "${ARCHIVE_URL}"
-archive = "flutter.tar.xz"
-urllib.request.urlretrieve(url, archive)
-with tarfile.open(archive) as tar:
-    tar.extractall()
-PY
-
-export PATH="$PWD/flutter/bin:$PATH"
-
-flutter --version
-
-flutter build web \
+./flutter/bin/flutter build web \
   --dart-define=SUPABASE_URL="$SUPABASE_URL" \
   --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
