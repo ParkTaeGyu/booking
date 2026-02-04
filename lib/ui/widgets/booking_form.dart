@@ -17,12 +17,7 @@ class BookingFormSection extends StatelessWidget {
     required this.onCreate,
   });
 
-  static const defaultServices = [
-    '컷 + 스타일',
-    '펌',
-    '염색',
-    '클리닉 집중 케어',
-  ];
+  static const defaultServices = ['컷 + 스타일', '펌', '염색', '클리닉 집중 케어'];
 
   final List<String> services;
   final bool autoApprove;
@@ -107,32 +102,29 @@ class _BookingFormState extends State<BookingForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '예약 신청',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+            Text('예약 신청', style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 4),
             Text(
-              widget.autoApprove
-                  ? '자동확정 설정이라 바로 확정됩니다.'
-                  : '관리자 승인 후 확정됩니다.',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: Colors.black54),
+              widget.autoApprove ? '자동확정 설정이라 바로 확정됩니다.' : '관리자 승인 후 확정됩니다.',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.black54),
             ),
             const SizedBox(height: 16),
             WeeklyCalendar(
               controller: _weekController,
               selectedDate: _selectedDate,
               onWeekChanged: (offset) {
-                final start = _startOfWeek(_normalizeDate(DateTime.now()))
-                    .add(Duration(days: offset * 7));
+                final start = _startOfWeek(
+                  _normalizeDate(DateTime.now()),
+                ).add(Duration(days: offset * 7));
                 setState(() {
-                  final keepCurrent = _isSameWeek(_selectedDate, start) &&
+                  final keepCurrent =
+                      _isSameWeek(_selectedDate, start) &&
                       !_isDateDisabled(_selectedDate);
-                  final nextSelected =
-                      keepCurrent ? _selectedDate : _firstEnabledDate(start);
+                  final nextSelected = keepCurrent
+                      ? _selectedDate
+                      : _firstEnabledDate(start);
                   _selectedDate = nextSelected;
                   final available = _availableSlots(_selectedDate);
                   _selectedTime = available.isNotEmpty ? available.first : '';
@@ -154,9 +146,8 @@ class _BookingFormState extends State<BookingForm> {
               label: '이름',
               controller: _nameController,
               hint: '예) 김지아',
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? '이름을 입력해주세요.'
-                  : null,
+              validator: (value) =>
+                  value == null || value.trim().isEmpty ? '이름을 입력해주세요.' : null,
             ),
             const SizedBox(height: 12),
             InputField(
@@ -164,9 +155,8 @@ class _BookingFormState extends State<BookingForm> {
               controller: _phoneController,
               hint: '010-0000-0000',
               keyboardType: TextInputType.phone,
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? '연락처를 입력해주세요.'
-                  : null,
+              validator: (value) =>
+                  value == null || value.trim().isEmpty ? '연락처를 입력해주세요.' : null,
             ),
             const SizedBox(height: 12),
             _GenderPicker(
@@ -217,7 +207,7 @@ class _BookingFormState extends State<BookingForm> {
   List<String> _generateSlotsForDate(DateTime date) {
     final isEarlyClose = isShortDay(date);
     final lastHour = isEarlyClose ? 17 : 19;
-    final lastMinute = isEarlyClose ? 30 : 0;
+    final lastMinute = isEarlyClose ? 30 : 30;
 
     final slots = <String>[];
     for (int hour = 10; hour < lastHour; hour++) {
@@ -296,29 +286,33 @@ class _BookingFormState extends State<BookingForm> {
 
   List<String> _availableSlots(DateTime date) {
     return _generateSlotsForDate(date)
-        .where((time) => !widget.bookings.any((booking) {
-              return booking.status == BookingStatus.confirmed &&
-                  _sameDay(booking.date, date) &&
-                  booking.timeLabel == time;
-            }))
-        .where((time) => !widget.blockedSlots.any((slot) {
-              return _sameDay(slot.date, date) && slot.timeLabel == time;
-            }))
+        .where(
+          (time) => !widget.bookings.any((booking) {
+            return booking.status == BookingStatus.confirmed &&
+                _sameDay(booking.date, date) &&
+                booking.timeLabel == time;
+          }),
+        )
+        .where(
+          (time) => !widget.blockedSlots.any((slot) {
+            return _sameDay(slot.date, date) && slot.timeLabel == time;
+          }),
+        )
         .toList();
   }
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedTime.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('예약 시간을 선택해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('예약 시간을 선택해주세요.')));
       return;
     }
     if (_isTaken(_selectedTime)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('해당 시간은 이미 예약되었습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('해당 시간은 이미 예약되었습니다.')));
       return;
     }
 
@@ -340,19 +334,14 @@ class _BookingFormState extends State<BookingForm> {
     widget.onCreate(newBooking);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          widget.autoApprove ? '예약이 확정되었습니다.' : '예약 신청이 완료되었습니다.',
-        ),
+        content: Text(widget.autoApprove ? '예약이 확정되었습니다.' : '예약 신청이 완료되었습니다.'),
       ),
     );
   }
 }
 
 class _GenderPicker extends StatelessWidget {
-  const _GenderPicker({
-    required this.value,
-    required this.onChanged,
-  });
+  const _GenderPicker({required this.value, required this.onChanged});
 
   final String value;
   final ValueChanged<String> onChanged;
@@ -419,8 +408,8 @@ class _GenderChip extends StatelessWidget {
             child: Text(
               label,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: selected ? Colors.black : Colors.black87,
-                  ),
+                color: selected ? Colors.black : Colors.black87,
+              ),
             ),
           ),
         ),

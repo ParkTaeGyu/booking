@@ -6,6 +6,7 @@ import '../../utils/holiday_calendar.dart';
 import 'common.dart';
 
 enum AdminFilter { all, pending, confirmed, rejected }
+
 enum AdminSort { dateAsc, dateDesc, createdDesc }
 
 class AdminPanel extends StatefulWidget {
@@ -84,10 +85,7 @@ class _AdminPanelState extends State<AdminPanel> {
             ],
           ),
           const SizedBox(height: 20),
-          Text(
-            '예약 관리',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
+          Text('예약 관리', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
           _AdminFilters(
             filter: _filter,
@@ -164,8 +162,11 @@ class _AdminPanelState extends State<AdminPanel> {
   }
 
   int _compareDateTime(Booking a, Booking b) {
-    final dateCompare = DateTime(a.date.year, a.date.month, a.date.day)
-        .compareTo(DateTime(b.date.year, b.date.month, b.date.day));
+    final dateCompare = DateTime(
+      a.date.year,
+      a.date.month,
+      a.date.day,
+    ).compareTo(DateTime(b.date.year, b.date.month, b.date.day));
     if (dateCompare != 0) return dateCompare;
     return _timeToMinutes(a.timeLabel).compareTo(_timeToMinutes(b.timeLabel));
   }
@@ -196,7 +197,7 @@ class _AdminPanelState extends State<AdminPanel> {
   List<String> _generateSlotsForDate(DateTime date) {
     final isEarlyClose = isShortDay(date);
     final lastHour = isEarlyClose ? 17 : 19;
-    final lastMinute = isEarlyClose ? 30 : 0;
+    final lastMinute = isEarlyClose ? 30 : 30;
 
     final slots = <String>[];
     for (int hour = 10; hour < lastHour; hour++) {
@@ -267,16 +268,12 @@ class _AdminFilters extends StatelessWidget {
               children: [
                 Text(
                   '표시중 $visibleCount건',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: Colors.black54),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.black54),
                 ),
                 const Spacer(),
-                _SortDropdown(
-                  value: sort,
-                  onChanged: onSortChanged,
-                ),
+                _SortDropdown(value: sort, onChanged: onSortChanged),
               ],
             ),
           ],
@@ -315,10 +312,9 @@ class _FilterChip extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: Theme.of(context)
-              .textTheme
-              .bodyMedium
-              ?.copyWith(color: textColor),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: textColor),
         ),
       ),
     );
@@ -326,10 +322,7 @@ class _FilterChip extends StatelessWidget {
 }
 
 class _SortDropdown extends StatelessWidget {
-  const _SortDropdown({
-    required this.value,
-    required this.onChanged,
-  });
+  const _SortDropdown({required this.value, required this.onChanged});
 
   final AdminSort value;
   final ValueChanged<AdminSort> onChanged;
@@ -346,10 +339,7 @@ class _SortDropdown extends StatelessWidget {
         child: DropdownButton<AdminSort>(
           value: value,
           items: const [
-            DropdownMenuItem(
-              value: AdminSort.dateAsc,
-              child: Text('예약일 오름차순'),
-            ),
+            DropdownMenuItem(value: AdminSort.dateAsc, child: Text('예약일 오름차순')),
             DropdownMenuItem(
               value: AdminSort.dateDesc,
               child: Text('예약일 내림차순'),
@@ -398,17 +388,19 @@ class _AdminBookingCard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: status.color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     status.label,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: status.color,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: status.color),
                   ),
                 ),
               ],
@@ -416,28 +408,25 @@ class _AdminBookingCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               '${formatDate(booking.date)} · ${booking.timeLabel}',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: Colors.black54),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.black54),
             ),
             const SizedBox(height: 6),
             Text(
               '연락처 ${booking.phone} · ${booking.gender}',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: Colors.black45),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.black45),
             ),
             if (booking.note != null && booking.note!.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
                   '요청: ${booking.note}',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: Colors.black45),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.black45),
                 ),
               ),
             if (booking.status == BookingStatus.pending)
@@ -461,8 +450,9 @@ class _AdminBookingCard extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: onApprove,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.secondary,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.secondary,
                           foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
@@ -523,10 +513,9 @@ class _BlockManager extends StatelessWidget {
               children: [
                 Text(
                   '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: Colors.black54),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.black54),
                 ),
                 const Spacer(),
                 isDayBlocked
@@ -537,8 +526,9 @@ class _BlockManager extends StatelessWidget {
                     : ElevatedButton(
                         onPressed: onBlockDay,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.secondary,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.secondary,
                           foregroundColor: Colors.black,
                         ),
                         child: const Text('하루 전체 차단'),
@@ -549,7 +539,11 @@ class _BlockManager extends StatelessWidget {
             LayoutBuilder(
               builder: (context, constraints) {
                 final width = constraints.maxWidth;
-                final columns = width >= 720 ? 6 : width >= 520 ? 4 : 3;
+                final columns = width >= 720
+                    ? 6
+                    : width >= 520
+                    ? 4
+                    : 3;
                 return GridView.builder(
                   itemCount: slots.length,
                   shrinkWrap: true,
@@ -567,8 +561,8 @@ class _BlockManager extends StatelessWidget {
                       onTap: isDayBlocked
                           ? null
                           : blocked
-                              ? () => onUnblockSlot(time)
-                              : () => onBlockSlot(time),
+                          ? () => onUnblockSlot(time)
+                          : () => onBlockSlot(time),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         alignment: Alignment.center,
@@ -585,8 +579,11 @@ class _BlockManager extends StatelessWidget {
                         ),
                         child: Text(
                           time,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: blocked ? Colors.redAccent : Colors.black87,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: blocked
+                                    ? Colors.redAccent
+                                    : Colors.black87,
                               ),
                         ),
                       ),
