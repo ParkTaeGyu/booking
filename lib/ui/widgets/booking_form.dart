@@ -454,7 +454,6 @@ class _BookingFormState extends State<BookingForm> {
         content: Text(widget.autoApprove ? '예약이 확정되었습니다.' : '예약 신청이 완료되었습니다.'),
       ),
     );
-    }
   }
 
   void _syncCanSubmit() {
@@ -465,6 +464,7 @@ class _BookingFormState extends State<BookingForm> {
     if (next == _canSubmit) return;
     setState(() => _canSubmit = next);
   }
+}
 
 class _GenderPicker extends StatelessWidget {
   const _GenderPicker({required this.value, required this.onChanged});
