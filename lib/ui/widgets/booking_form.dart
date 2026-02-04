@@ -216,11 +216,10 @@ class _BookingFormState extends State<BookingForm> {
                 hint: '카테고리 선택',
                 onChanged: (value) {
                   if (value == null) return;
+                  if (value == _selectedCategory) return;
                   setState(() {
                     _selectedCategory = value;
-                    _selectedServices.clear();
                   });
-                  _syncCanSubmit();
                 },
               ),
               const SizedBox(height: 12),
