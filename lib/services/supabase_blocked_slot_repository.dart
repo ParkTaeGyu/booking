@@ -51,7 +51,7 @@ class SupabaseBlockedSlotRepository implements BlockedSlotRepository {
         );
 
     if (timeLabel == null) {
-      await query.is_('time_label', null);
+      await query.filter('time_label', 'is', null);
     } else {
       await query.eq('time_label', timeLabel);
     }
