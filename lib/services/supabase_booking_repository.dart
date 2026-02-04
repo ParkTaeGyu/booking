@@ -19,7 +19,12 @@ class SupabaseBookingRepository implements BookingRepository {
           .order('date', ascending: true)
           .order('time_label', ascending: true);
 
-      return response.map((row) => Booking.fromMap(row)).toList();
+      if (response == null) {
+        return [];
+      }
+
+      final data = response as List<dynamic>;
+      return data.map((row) => Booking.fromMap(row as Map<String, dynamic>)).toList();
     } on PostgrestException catch (error) {
       // Surface detailed error for debugging (visible in console).
       // ignore: avoid_print
