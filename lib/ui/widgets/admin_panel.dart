@@ -44,16 +44,20 @@ class _AdminPanelState extends State<AdminPanel> {
   Widget build(BuildContext context) {
     final filtered = _applyFilter(widget.bookings);
     final sorted = _applySort(filtered);
+    final dayBookings = _bookingsOnDate(_selectedDate);
+    final bookingsByTime = _bookingsByTime(_selectedDate);
 
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _BlockManager(
+          _DaySchedulePanel(
             date: _selectedDate,
             slots: _generateSlotsForDate(_selectedDate),
             isDayBlocked: _isDayBlocked(_selectedDate),
             isSlotBlocked: (time) => _isSlotBlocked(_selectedDate, time),
+            dayBookings: dayBookings,
+            bookingsByTime: bookingsByTime,
             onDateChanged: (date) => setState(() => _selectedDate = date),
             onBlockDay: () => widget.onBlockSlot(_selectedDate),
             onUnblockDay: () => widget.onUnblockSlot(_selectedDate),
@@ -192,6 +196,21 @@ class _AdminPanelState extends State<AdminPanel> {
     return widget.blockedSlots.any(
       (slot) => _sameDay(slot.date, date) && slot.timeLabel == time,
     );
+  }
+
+  List<Booking> _bookingsOnDate(DateTime date) {
+    return widget.bookings
+        .where((booking) => _sameDay(booking.date, date))
+        .toList();
+  }
+
+  Map<String, List<Booking>> _bookingsByTime(DateTime date) {
+    final map = <String, List<Booking>>{};
+    for (final booking in widget.bookings) {
+      if (!_sameDay(booking.date, date)) continue;
+      map.putIfAbsent(booking.timeLabel, () => []).add(booking);
+    }
+    return map;
   }
 
   List<String> _generateSlotsForDate(DateTime date) {
@@ -469,12 +488,14 @@ class _AdminBookingCard extends StatelessWidget {
   }
 }
 
-class _BlockManager extends StatelessWidget {
-  const _BlockManager({
+class _DaySchedulePanel extends StatelessWidget {
+  const _DaySchedulePanel({
     required this.date,
     required this.slots,
     required this.isDayBlocked,
     required this.isSlotBlocked,
+    required this.dayBookings,
+    required this.bookingsByTime,
     required this.onDateChanged,
     required this.onBlockDay,
     required this.onUnblockDay,
@@ -486,6 +507,8 @@ class _BlockManager extends StatelessWidget {
   final List<String> slots;
   final bool isDayBlocked;
   final bool Function(String) isSlotBlocked;
+  final List<Booking> dayBookings;
+  final Map<String, List<Booking>> bookingsByTime;
   final ValueChanged<DateTime> onDateChanged;
   final VoidCallback onBlockDay;
   final VoidCallback onUnblockDay;
@@ -500,7 +523,7 @@ class _BlockManager extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('차단 관리', style: Theme.of(context).textTheme.titleLarge),
+            Text('일정 관리', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             CalendarDatePicker(
               initialDate: date,
@@ -536,59 +559,135 @@ class _BlockManager extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final width = constraints.maxWidth;
-                final columns = width >= 720
-                    ? 6
-                    : width >= 520
-                    ? 4
-                    : 3;
-                return GridView.builder(
-                  itemCount: slots.length,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: columns,
-                    mainAxisSpacing: 8,
-                    crossAxisSpacing: 8,
-                    childAspectRatio: 2.4,
+            if (dayBookings.isEmpty)
+              Text(
+                '예약 없음',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.black45),
+              ),
+            const SizedBox(height: 12),
+            ListView.separated(
+              itemCount: slots.length,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              separatorBuilder: (context, _) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final time = slots[index];
+                final blocked = isSlotBlocked(time) || isDayBlocked;
+                final timeBookings = bookingsByTime[time] ?? const [];
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: blocked
+                        ? Colors.redAccent.withValues(alpha: 0.12)
+                        : const Color(0xFFF7F4EF),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: blocked ? Colors.redAccent : Colors.transparent,
+                    ),
                   ),
-                  itemBuilder: (context, index) {
-                    final time = slots[index];
-                    final blocked = isSlotBlocked(time);
-                    return GestureDetector(
-                      onTap: isDayBlocked
-                          ? null
-                          : blocked
-                          ? () => onUnblockSlot(time)
-                          : () => onBlockSlot(time),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: blocked
-                              ? Colors.redAccent.withValues(alpha: 0.25)
-                              : const Color(0xFFF7F4EF),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: blocked
-                                ? Colors.redAccent
-                                : Colors.transparent,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            time,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  color: blocked
+                                      ? Colors.redAccent
+                                      : Colors.black87,
+                                  decoration: blocked
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                ),
                           ),
-                        ),
-                        child: Text(
-                          time,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: blocked
-                                    ? Colors.redAccent
-                                    : Colors.black87,
+                          const Spacer(),
+                          if (isDayBlocked)
+                            Text(
+                              '전체 차단',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: Colors.redAccent),
+                            )
+                          else if (isSlotBlocked(time))
+                            OutlinedButton(
+                              onPressed: () => onUnblockSlot(time),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.redAccent,
+                                side: const BorderSide(
+                                  color: Colors.redAccent,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
                               ),
-                        ),
+                              child: const Text('차단 해제'),
+                            )
+                          else
+                            OutlinedButton(
+                              onPressed: () => onBlockSlot(time),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                              ),
+                              child: const Text('시간 차단'),
+                            ),
+                        ],
                       ),
-                    );
-                  },
+                      if (timeBookings.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: timeBookings.map((booking) {
+                            final status = statusMeta(booking.status);
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 6),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '${booking.customerName} · ${booking.service}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium,
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: status.color
+                                          .withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      status.label,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall?.copyWith(
+                                            color: status.color,
+                                          ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ],
+                  ),
                 );
               },
             ),
