@@ -34,7 +34,8 @@ class WeeklyCalendar extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text('날짜 선택', style: Theme.of(context).textTheme.bodyMedium),
+                Text(_monthLabel(selectedDate),
+                    style: Theme.of(context).textTheme.bodyMedium),
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.chevron_left),
@@ -177,5 +178,9 @@ class WeeklyCalendar extends StatelessWidget {
 
   bool _sameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  String _monthLabel(DateTime date) {
+    return '${date.year}년 ${date.month}월';
   }
 }
