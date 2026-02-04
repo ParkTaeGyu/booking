@@ -228,6 +228,17 @@ class _BookingFormState extends State<BookingForm> {
                     .bodyMedium
                     ?.copyWith(color: Colors.black54),
               ),
+              if (_selectedServices.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    _selectedServices.values.map((item) => item.name).join(', '),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: Colors.black45),
+                  ),
+                ),
               const SizedBox(height: 12),
               TimeSlotPicker(
                 slots: slots,
