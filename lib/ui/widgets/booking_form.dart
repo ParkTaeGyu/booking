@@ -255,7 +255,10 @@ class _BookingFormState extends State<BookingForm> {
     final normalized = _normalizeDate(date);
     final today = _normalizeDate(DateTime.now());
     final lastDate = DateTime(today.year + 1, today.month, today.day);
-    return normalized.isBefore(today) || normalized.isAfter(lastDate);
+    if (normalized.isBefore(today) || normalized.isAfter(lastDate)) {
+      return true;
+    }
+    return _availableSlots(normalized).isEmpty;
   }
 
   DateTime _firstEnabledDate(DateTime weekStart) {
