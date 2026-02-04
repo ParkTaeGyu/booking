@@ -39,37 +39,47 @@ class TimeSlotPicker extends StatelessWidget {
               ),
               itemBuilder: (context, index) {
                 final time = slots[index];
-                final taken = isTaken(time) || allDisabled;
-                final selected = selectedTime == time;
+                final blockedAll = allDisabled;
+                final taken = isTaken(time) || blockedAll;
+                final selected = blockedAll || selectedTime == time;
                 return GestureDetector(
                   onTap: taken ? null : () => onSelected(time),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: selected
-                          ? Theme.of(context).colorScheme.secondary
-                          : allDisabled
-                              ? const Color(0xFFECE8E1)
+                      color: blockedAll
+                          ? Colors.redAccent.withValues(alpha: 0.2)
+                          : selected
+                              ? Theme.of(context).colorScheme.secondary
                               : const Color(0xFFF7F4EF),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: taken
-                            ? Colors.black12
-                            : selected
-                                ? Theme.of(context).colorScheme.secondary
-                                : Colors.transparent,
+                        color: blockedAll
+                            ? Colors.redAccent
+                            : taken
+                                ? Colors.black12
+                                : selected
+                                    ? Theme.of(context).colorScheme.secondary
+                                    : Colors.transparent,
                       ),
                     ),
                     child: Text(
                       time,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: taken
-                                ? Colors.black26
-                                : selected
-                                    ? Colors.black
-                                    : Colors.black87,
-                            decoration: taken ? TextDecoration.lineThrough : null,
+                            color: blockedAll
+                                ? Colors.redAccent
+                                : taken
+                                    ? Colors.black26
+                                    : selected
+                                        ? Colors.black
+                                        : Colors.black87,
+                            fontWeight: blockedAll ? FontWeight.w600 : null,
+                            decoration: blockedAll
+                                ? TextDecoration.lineThrough
+                                : taken
+                                    ? TextDecoration.lineThrough
+                                    : null,
                           ),
                     ),
                   ),
