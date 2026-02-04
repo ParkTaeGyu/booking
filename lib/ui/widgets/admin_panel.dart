@@ -4,6 +4,7 @@ import '../../models/booking.dart';
 import '../../models/blocked_slot.dart';
 import '../../utils/holiday_calendar.dart';
 import 'common.dart';
+import 'weekly_calendar.dart';
 
 enum AdminFilter { all, pending, confirmed, rejected }
 
@@ -39,6 +40,13 @@ class _AdminPanelState extends State<AdminPanel> {
   AdminFilter _filter = AdminFilter.all;
   AdminSort _sort = AdminSort.dateAsc;
   DateTime _selectedDate = DateTime.now();
+  final PageController _weekController = PageController();
+
+  @override
+  void dispose() {
+    _weekController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +66,22 @@ class _AdminPanelState extends State<AdminPanel> {
             isSlotBlocked: (time) => _isSlotBlocked(_selectedDate, time),
             dayBookings: dayBookings,
             bookingsByTime: bookingsByTime,
-            onDateChanged: (date) => setState(() => _selectedDate = date),
+            weekController: _weekController,
+            onWeekChanged: (offset) {
+              final start = _startOfWeek(
+                _normalizeDate(DateTime.now()),
+              ).add(Duration(days: offset * 7));
+              setState(() {
+                if (!_isSameWeek(_selectedDate, start)) {
+                  _selectedDate = start;
+                }
+              });
+            },
+            onDateSelected: (date) => setState(() => _selectedDate = date),
+            isDateDisabled: _isDateDisabled,
+            isHoliday: (date) => isHoliday(date),
+            isCalendarBlocked: (date) =>
+                _isDayBlocked(date) || _isFullyBooked(date),
             onBlockDay: () => widget.onBlockSlot(_selectedDate),
             onUnblockDay: () => widget.onUnblockSlot(_selectedDate),
             onBlockSlot: (time) =>
@@ -186,6 +209,20 @@ class _AdminPanelState extends State<AdminPanel> {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
+  DateTime _normalizeDate(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
+  }
+
+  DateTime _startOfWeek(DateTime date) {
+    return date.subtract(Duration(days: date.weekday - 1));
+  }
+
+  bool _isSameWeek(DateTime date, DateTime weekStart) {
+    final normalized = _normalizeDate(date);
+    return normalized.isAfter(weekStart.subtract(const Duration(days: 1))) &&
+        normalized.isBefore(weekStart.add(const Duration(days: 7)));
+  }
+
   bool _isDayBlocked(DateTime date) {
     return widget.blockedSlots.any(
       (slot) => _sameDay(slot.date, date) && slot.timeLabel == null,
@@ -196,6 +233,10 @@ class _AdminPanelState extends State<AdminPanel> {
     return widget.blockedSlots.any(
       (slot) => _sameDay(slot.date, date) && slot.timeLabel == time,
     );
+  }
+
+  bool _isDateDisabled(DateTime date) {
+    return false;
   }
 
   List<Booking> _bookingsOnDate(DateTime date) {
@@ -211,6 +252,28 @@ class _AdminPanelState extends State<AdminPanel> {
       map.putIfAbsent(booking.timeLabel, () => []).add(booking);
     }
     return map;
+  }
+
+  bool _isFullyBooked(DateTime date) {
+    return _availableSlots(date).isEmpty;
+  }
+
+  List<String> _availableSlots(DateTime date) {
+    if (_isDayBlocked(date)) return [];
+    return _generateSlotsForDate(date)
+        .where(
+          (time) => !widget.bookings.any((booking) {
+            return booking.status == BookingStatus.confirmed &&
+                _sameDay(booking.date, date) &&
+                booking.timeLabel == time;
+          }),
+        )
+        .where(
+          (time) => !widget.blockedSlots.any((slot) {
+            return _sameDay(slot.date, date) && slot.timeLabel == time;
+          }),
+        )
+        .toList();
   }
 
   List<String> _generateSlotsForDate(DateTime date) {
@@ -496,7 +559,12 @@ class _DaySchedulePanel extends StatelessWidget {
     required this.isSlotBlocked,
     required this.dayBookings,
     required this.bookingsByTime,
-    required this.onDateChanged,
+    required this.weekController,
+    required this.onWeekChanged,
+    required this.onDateSelected,
+    required this.isDateDisabled,
+    required this.isHoliday,
+    required this.isCalendarBlocked,
     required this.onBlockDay,
     required this.onUnblockDay,
     required this.onBlockSlot,
@@ -509,7 +577,12 @@ class _DaySchedulePanel extends StatelessWidget {
   final bool Function(String) isSlotBlocked;
   final List<Booking> dayBookings;
   final Map<String, List<Booking>> bookingsByTime;
-  final ValueChanged<DateTime> onDateChanged;
+  final PageController weekController;
+  final ValueChanged<int> onWeekChanged;
+  final ValueChanged<DateTime> onDateSelected;
+  final bool Function(DateTime) isDateDisabled;
+  final bool Function(DateTime) isHoliday;
+  final bool Function(DateTime) isCalendarBlocked;
   final VoidCallback onBlockDay;
   final VoidCallback onUnblockDay;
   final ValueChanged<String> onBlockSlot;
@@ -525,11 +598,14 @@ class _DaySchedulePanel extends StatelessWidget {
           children: [
             Text('일정 관리', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
-            CalendarDatePicker(
-              initialDate: date,
-              firstDate: DateTime.now(),
-              lastDate: DateTime.now().add(const Duration(days: 365)),
-              onDateChanged: onDateChanged,
+            WeeklyCalendar(
+              controller: weekController,
+              selectedDate: date,
+              onWeekChanged: onWeekChanged,
+              onDateSelected: onDateSelected,
+              isDisabled: isDateDisabled,
+              isHoliday: isHoliday,
+              isDayBlocked: isCalendarBlocked,
             ),
             const SizedBox(height: 8),
             Row(
