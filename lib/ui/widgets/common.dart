@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class BackgroundShape extends StatelessWidget {
   const BackgroundShape({super.key});
@@ -71,6 +72,7 @@ class InputField extends StatelessWidget {
     required this.controller,
     required this.hint,
     this.keyboardType,
+    this.inputFormatters,
     this.validator,
     this.maxLines = 1,
   });
@@ -79,6 +81,7 @@ class InputField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
   final FormFieldValidator<String>? validator;
   final int maxLines;
 
@@ -92,6 +95,7 @@ class InputField extends StatelessWidget {
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
           validator: validator,
           maxLines: maxLines,
           decoration: InputDecoration(
@@ -117,13 +121,15 @@ class DropdownField extends StatelessWidget {
     required this.items,
     required this.onChanged,
     this.itemBuilder,
+    this.hint,
   });
 
   final String label;
-  final String value;
+  final String? value;
   final List<String> items;
   final ValueChanged<String?> onChanged;
   final Widget Function(BuildContext, String)? itemBuilder;
+  final String? hint;
 
   @override
   Widget build(BuildContext context) {
@@ -140,8 +146,9 @@ class DropdownField extends StatelessWidget {
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
-              value: value,
+              value: value == null || value!.isEmpty ? null : value,
               isExpanded: true,
+              hint: hint == null ? null : Text(hint!),
               items: items.map((item) {
                 return DropdownMenuItem<String>(
                   value: item,

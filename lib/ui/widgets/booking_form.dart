@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../models/booking.dart';
 import '../../models/blocked_slot.dart';
@@ -77,10 +78,6 @@ class _BookingFormState extends State<BookingForm> {
   @override
   void initState() {
     super.initState();
-    if (widget.services.isNotEmpty) {
-      _selectedCategory = widget.services.first.category;
-      _selectedServices[widget.services.first.id] = widget.services.first;
-    }
     _selectedDate = _normalizeDate(DateTime.now());
     final available = _availableSlots(_selectedDate);
     _selectedTime = available.isNotEmpty ? available.first : '';
@@ -100,12 +97,6 @@ class _BookingFormState extends State<BookingForm> {
   @override
   void didUpdateWidget(covariant BookingForm oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.services.isNotEmpty && _selectedServices.isEmpty) {
-      setState(() {
-        _selectedCategory = widget.services.first.category;
-        _selectedServices[widget.services.first.id] = widget.services.first;
-      });
-    }
     _syncCanSubmit();
   }
 
@@ -187,10 +178,21 @@ class _BookingFormState extends State<BookingForm> {
               InputField(
                 label: '연락처',
                 controller: _phoneController,
-                hint: '010-0000-0000',
+                hint: '01012345678',
                 keyboardType: TextInputType.phone,
-                validator: (value) =>
-                    value == null || value.trim().isEmpty ? '연락처를 입력해주세요.' : null,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(11),
+                ],
+                validator: (value) {
+                  final text = value?.trim() ?? '';
+                  if (text.isEmpty) return '연락처를 입력해주세요.';
+                  if (!RegExp(r'^[0-9]+$').hasMatch(text)) {
+                    return '숫자만 입력해주세요.';
+                  }
+                  if (text.length < 10) return '연락처를 확인해주세요.';
+                  return null;
+                },
               ),
               const SizedBox(height: 12),
               _GenderPicker(
@@ -204,10 +206,12 @@ class _BookingFormState extends State<BookingForm> {
                 label: '카테고리',
                 value: _selectedCategory,
                 items: categories,
+                hint: '카테고리 선택',
                 onChanged: (value) {
                   if (value == null) return;
                   setState(() {
                     _selectedCategory = value;
+                    _selectedServices.clear();
                   });
                   _syncCanSubmit();
                 },
@@ -458,11 +462,17 @@ class _BookingFormState extends State<BookingForm> {
 
   void _syncCanSubmit() {
     final hasName = _nameController.text.trim().isNotEmpty;
-    final hasPhone = _phoneController.text.trim().isNotEmpty;
+    final hasPhone = _isValidPhone(_phoneController.text.trim());
     final hasService = _selectedServices.isNotEmpty;
     final next = hasName && hasPhone && hasService;
     if (next == _canSubmit) return;
     setState(() => _canSubmit = next);
+  }
+
+  bool _isValidPhone(String value) {
+    if (value.isEmpty) return false;
+    if (!RegExp(r'^[0-9]+$').hasMatch(value)) return false;
+    return value.length >= 10;
   }
 }
 
