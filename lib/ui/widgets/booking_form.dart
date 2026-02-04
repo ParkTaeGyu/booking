@@ -78,7 +78,7 @@ class _BookingFormState extends State<BookingForm> {
   @override
   void initState() {
     super.initState();
-    _selectedDate = _normalizeDate(DateTime.now());
+    _selectedDate = _firstAvailableDate();
     final available = _availableSlots(_selectedDate);
     _selectedTime = available.isNotEmpty ? available.first : '';
     _nameController.addListener(_syncCanSubmit);
@@ -97,6 +97,13 @@ class _BookingFormState extends State<BookingForm> {
   @override
   void didUpdateWidget(covariant BookingForm oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (_isDateDisabled(_selectedDate)) {
+      setState(() {
+        _selectedDate = _firstAvailableDate();
+        final available = _availableSlots(_selectedDate);
+        _selectedTime = available.isNotEmpty ? available.first : '';
+      });
+    }
     _syncCanSubmit();
   }
 
@@ -382,6 +389,16 @@ class _BookingFormState extends State<BookingForm> {
       }
     }
     return weekStart;
+  }
+
+  DateTime _firstAvailableDate() {
+    final today = _normalizeDate(DateTime.now());
+    final lastDate = DateTime(today.year + 1, today.month, today.day);
+    for (int i = 0; i <= lastDate.difference(today).inDays; i++) {
+      final date = today.add(Duration(days: i));
+      if (!_isDateDisabled(date)) return date;
+    }
+    return today;
   }
 
   List<String> _availableSlots(DateTime date) {
