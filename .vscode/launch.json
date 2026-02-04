@@ -6,7 +6,12 @@
       "request": "launch",
       "type": "dart",
       "flutterMode": "debug",
-      "args": ["-d", "chrome"]
+      "args": [
+        "-d",
+        "chrome",
+        "--dart-define=SUPABASE_URL=https://dizugtlhkyuuwnwviyjz.supabase.co",
+        "--dart-define=SUPABASE_ANON_KEY=sb_publishable_3QnYClMDF-yFefl3Hoz9Ow_RwraAA23"
+      ]
     },
     {
       "name": "Flutter (Android Emulator)",
