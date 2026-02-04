@@ -44,80 +44,84 @@ class _AdminPanelState extends State<AdminPanel> {
     final filtered = _applyFilter(widget.bookings);
     final sorted = _applySort(filtered);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _BlockManager(
-          date: _selectedDate,
-          slots: _generateSlotsForDate(_selectedDate),
-          isDayBlocked: _isDayBlocked(_selectedDate),
-          isSlotBlocked: (time) => _isSlotBlocked(_selectedDate, time),
-          onDateChanged: (date) => setState(() => _selectedDate = date),
-          onBlockDay: () => widget.onBlockSlot(_selectedDate),
-          onUnblockDay: () => widget.onUnblockSlot(_selectedDate),
-          onBlockSlot: (time) =>
-              widget.onBlockSlot(_selectedDate, timeLabel: time),
-          onUnblockSlot: (time) =>
-              widget.onUnblockSlot(_selectedDate, timeLabel: time),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: InfoCard(
-                title: '대기',
-                value: '${widget.pendingCount}건',
-                subtitle: '승인 필요',
-                icon: Icons.pending_actions,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: InfoCard(
-                title: '확정',
-                value: '${widget.confirmedCount}건',
-                subtitle: '오늘 기준',
-                icon: Icons.event_available,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Text(
-          '예약 관리',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 12),
-        _AdminFilters(
-          filter: _filter,
-          sort: _sort,
-          visibleCount: sorted.length,
-          onFilterChanged: (value) => setState(() => _filter = value),
-          onSortChanged: (value) => setState(() => _sort = value),
-        ),
-        const SizedBox(height: 12),
-        Expanded(
-          child: sorted.isEmpty
-              ? EmptyState(
-                  title: _filter == AdminFilter.all
-                      ? '예약이 없습니다'
-                      : '해당 상태의 예약이 없습니다',
-                  description: '예약이 생성되면 승인/거절할 수 있어요.',
-                )
-              : ListView.separated(
-                  itemCount: sorted.length,
-                  separatorBuilder: (context, _) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final booking = sorted[index];
-                    return _AdminBookingCard(
-                      booking: booking,
-                      onApprove: () => widget.onApprove(booking.id),
-                      onReject: () => widget.onReject(booking.id),
-                    );
-                  },
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _BlockManager(
+            date: _selectedDate,
+            slots: _generateSlotsForDate(_selectedDate),
+            isDayBlocked: _isDayBlocked(_selectedDate),
+            isSlotBlocked: (time) => _isSlotBlocked(_selectedDate, time),
+            onDateChanged: (date) => setState(() => _selectedDate = date),
+            onBlockDay: () => widget.onBlockSlot(_selectedDate),
+            onUnblockDay: () => widget.onUnblockSlot(_selectedDate),
+            onBlockSlot: (time) =>
+                widget.onBlockSlot(_selectedDate, timeLabel: time),
+            onUnblockSlot: (time) =>
+                widget.onUnblockSlot(_selectedDate, timeLabel: time),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: InfoCard(
+                  title: '대기',
+                  value: '${widget.pendingCount}건',
+                  subtitle: '승인 필요',
+                  icon: Icons.pending_actions,
                 ),
-        ),
-      ],
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: InfoCard(
+                  title: '확정',
+                  value: '${widget.confirmedCount}건',
+                  subtitle: '오늘 기준',
+                  icon: Icons.event_available,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            '예약 관리',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 12),
+          _AdminFilters(
+            filter: _filter,
+            sort: _sort,
+            visibleCount: sorted.length,
+            onFilterChanged: (value) => setState(() => _filter = value),
+            onSortChanged: (value) => setState(() => _sort = value),
+          ),
+          const SizedBox(height: 12),
+          if (sorted.isEmpty)
+            EmptyState(
+              title: _filter == AdminFilter.all
+                  ? '예약이 없습니다'
+                  : '해당 상태의 예약이 없습니다',
+              description: '예약이 생성되면 승인/거절할 수 있어요.',
+            )
+          else
+            ListView.separated(
+              itemCount: sorted.length,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              separatorBuilder: (context, _) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final booking = sorted[index];
+                return _AdminBookingCard(
+                  booking: booking,
+                  onApprove: () => widget.onApprove(booking.id),
+                  onReject: () => widget.onReject(booking.id),
+                );
+              },
+            ),
+          const SizedBox(height: 24),
+        ],
+      ),
     );
   }
 
