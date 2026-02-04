@@ -6,12 +6,14 @@ class TimeSlotPicker extends StatelessWidget {
     required this.slots,
     required this.selectedTime,
     required this.isTaken,
+    required this.allDisabled,
     required this.onSelected,
   });
 
   final List<String> slots;
   final String selectedTime;
   final bool Function(String) isTaken;
+  final bool allDisabled;
   final ValueChanged<String> onSelected;
 
   @override
@@ -37,7 +39,7 @@ class TimeSlotPicker extends StatelessWidget {
               ),
               itemBuilder: (context, index) {
                 final time = slots[index];
-                final taken = isTaken(time);
+                final taken = isTaken(time) || allDisabled;
                 final selected = selectedTime == time;
                 return GestureDetector(
                   onTap: taken ? null : () => onSelected(time),
@@ -47,7 +49,9 @@ class TimeSlotPicker extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: selected
                           ? Theme.of(context).colorScheme.secondary
-                          : const Color(0xFFF7F4EF),
+                          : allDisabled
+                              ? const Color(0xFFECE8E1)
+                              : const Color(0xFFF7F4EF),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: taken

@@ -147,6 +147,7 @@ class _BookingFormState extends State<BookingForm> {
               },
               isDisabled: _isDateDisabled,
               isHoliday: (date) => isHoliday(date),
+              isDayBlocked: _isDayBlocked,
             ),
             const SizedBox(height: 16),
             InputField(
@@ -189,6 +190,7 @@ class _BookingFormState extends State<BookingForm> {
               slots: slots,
               selectedTime: _selectedTime,
               isTaken: (time) => _isTaken(time) || _isBlocked(time),
+              allDisabled: _isDayBlocked(_selectedDate),
               onSelected: (time) {
                 setState(() => _selectedTime = time);
               },

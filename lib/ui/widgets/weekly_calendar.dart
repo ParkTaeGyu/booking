@@ -9,6 +9,7 @@ class WeeklyCalendar extends StatelessWidget {
     required this.onDateSelected,
     required this.isDisabled,
     required this.isHoliday,
+    required this.isDayBlocked,
   });
 
   final PageController controller;
@@ -17,6 +18,7 @@ class WeeklyCalendar extends StatelessWidget {
   final ValueChanged<DateTime> onDateSelected;
   final bool Function(DateTime) isDisabled;
   final bool Function(DateTime) isHoliday;
+  final bool Function(DateTime) isDayBlocked;
 
   static const _dayLabels = ['월', '화', '수', '목', '금', '토', '일'];
 
@@ -70,6 +72,7 @@ class WeeklyCalendar extends StatelessWidget {
                     children: List.generate(7, (dayIndex) {
                       final date = weekStart.add(Duration(days: dayIndex));
                       final disabled = isDisabled(date);
+                      final blocked = isDayBlocked(date);
                       final selected = _sameDay(date, selectedDate);
                       final holiday = isHoliday(date);
                       final isSunday = date.weekday == DateTime.sunday;
@@ -123,6 +126,9 @@ class WeeklyCalendar extends StatelessWidget {
                                       .titleLarge
                                       ?.copyWith(
                                         color: dayColor,
+                                        decoration: blocked
+                                            ? TextDecoration.lineThrough
+                                            : null,
                                       ),
                                 ),
                                 const SizedBox(height: 4),
