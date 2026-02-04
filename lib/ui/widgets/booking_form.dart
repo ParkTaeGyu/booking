@@ -72,6 +72,7 @@ class _BookingFormState extends State<BookingForm> {
   final Map<String, ServiceItem> _selectedServices = {};
   String _selectedTime = '';
   String _selectedGender = '남성';
+  bool _canSubmit = false;
 
   @override
   void initState() {
@@ -83,6 +84,9 @@ class _BookingFormState extends State<BookingForm> {
     _selectedDate = _normalizeDate(DateTime.now());
     final available = _availableSlots(_selectedDate);
     _selectedTime = available.isNotEmpty ? available.first : '';
+    _nameController.addListener(_syncCanSubmit);
+    _phoneController.addListener(_syncCanSubmit);
+    _syncCanSubmit();
   }
 
   @override
@@ -102,6 +106,7 @@ class _BookingFormState extends State<BookingForm> {
         _selectedServices[widget.services.first.id] = widget.services.first;
       });
     }
+    _syncCanSubmit();
   }
 
   @override
@@ -204,6 +209,7 @@ class _BookingFormState extends State<BookingForm> {
                   setState(() {
                     _selectedCategory = value;
                   });
+                  _syncCanSubmit();
                 },
               ),
               const SizedBox(height: 12),
@@ -218,6 +224,7 @@ class _BookingFormState extends State<BookingForm> {
                       _selectedServices[service.id] = service;
                     }
                   });
+                  _syncCanSubmit();
                 },
               ),
               const SizedBox(height: 8),
@@ -253,7 +260,7 @@ class _BookingFormState extends State<BookingForm> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _submit,
+                  onPressed: _canSubmit ? _submit : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.secondary,
                     foregroundColor: Colors.black,
@@ -447,8 +454,17 @@ class _BookingFormState extends State<BookingForm> {
         content: Text(widget.autoApprove ? '예약이 확정되었습니다.' : '예약 신청이 완료되었습니다.'),
       ),
     );
+    }
   }
-}
+
+  void _syncCanSubmit() {
+    final hasName = _nameController.text.trim().isNotEmpty;
+    final hasPhone = _phoneController.text.trim().isNotEmpty;
+    final hasService = _selectedServices.isNotEmpty;
+    final next = hasName && hasPhone && hasService;
+    if (next == _canSubmit) return;
+    setState(() => _canSubmit = next);
+  }
 
 class _GenderPicker extends StatelessWidget {
   const _GenderPicker({required this.value, required this.onChanged});
