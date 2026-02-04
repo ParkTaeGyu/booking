@@ -42,6 +42,8 @@ class BookingStore extends ChangeNotifier {
       _lastError = null;
     } catch (error) {
       _lastError = error.toString();
+      // ignore: avoid_print
+      print('[BookingStore] load error: $_lastError');
     } finally {
       _ready = true;
       notifyListeners();

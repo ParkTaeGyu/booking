@@ -12,31 +12,56 @@ class SupabaseBookingRepository implements BookingRepository {
 
   @override
   Future<List<Booking>> fetchAll() async {
-    final response = await _client
-        .from(_table)
-        .select()
-        .order('date', ascending: true)
-        .order('time_label', ascending: true);
+    try {
+      final response = await _client
+          .from(_table)
+          .select()
+          .order('date', ascending: true)
+          .order('time_label', ascending: true);
 
-    return response.map((row) => Booking.fromMap(row)).toList();
+      return response.map((row) => Booking.fromMap(row)).toList();
+    } on PostgrestException catch (error) {
+      // Surface detailed error for debugging (visible in console).
+      // ignore: avoid_print
+      print('[Supabase] fetchAll error: ${error.code} ${error.message}');
+      // ignore: avoid_print
+      print('[Supabase] details: ${error.details} hint: ${error.hint}');
+      rethrow;
+    }
   }
 
   @override
   Future<Booking> create(Booking booking) async {
-    final response = await _client
-        .from(_table)
-        .insert(booking.toInsertMap())
-        .select()
-        .single();
+    try {
+      final response = await _client
+          .from(_table)
+          .insert(booking.toInsertMap())
+          .select()
+          .single();
 
-    return Booking.fromMap(response);
+      return Booking.fromMap(response);
+    } on PostgrestException catch (error) {
+      // ignore: avoid_print
+      print('[Supabase] create error: ${error.code} ${error.message}');
+      // ignore: avoid_print
+      print('[Supabase] details: ${error.details} hint: ${error.hint}');
+      rethrow;
+    }
   }
 
   @override
   Future<void> updateStatus(String id, BookingStatus status) async {
-    await _client
-        .from(_table)
-        .update({'status': status.name})
-        .eq('id', id);
+    try {
+      await _client
+          .from(_table)
+          .update({'status': status.name})
+          .eq('id', id);
+    } on PostgrestException catch (error) {
+      // ignore: avoid_print
+      print('[Supabase] updateStatus error: ${error.code} ${error.message}');
+      // ignore: avoid_print
+      print('[Supabase] details: ${error.details} hint: ${error.hint}');
+      rethrow;
+    }
   }
 }
