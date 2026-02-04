@@ -68,6 +68,7 @@ class _BookingFormState extends State<BookingForm> {
   final PageController _weekController = PageController();
 
   DateTime _selectedDate = DateTime.now();
+  String _selectedCategory = '';
   String _selectedService = '';
   int _selectedServicePrice = 0;
   String _selectedTime = '';
@@ -77,6 +78,7 @@ class _BookingFormState extends State<BookingForm> {
   void initState() {
     super.initState();
     if (widget.services.isNotEmpty) {
+      _selectedCategory = widget.services.first.category;
       _selectedService = widget.services.first.name;
       _selectedServicePrice = widget.services.first.price;
     }
@@ -98,6 +100,7 @@ class _BookingFormState extends State<BookingForm> {
     super.didUpdateWidget(oldWidget);
     if (widget.services.isNotEmpty && _selectedService.isEmpty) {
       setState(() {
+        _selectedCategory = widget.services.first.category;
         _selectedService = widget.services.first.name;
         _selectedServicePrice = widget.services.first.price;
       });
@@ -108,7 +111,10 @@ class _BookingFormState extends State<BookingForm> {
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final slots = _generateSlotsForDate(_selectedDate);
-    final serviceNames = widget.services.map((service) => service.name).toList();
+    final categories = _categories();
+    final servicesForCategory = _servicesForCategory(_selectedCategory);
+    final serviceNames =
+        servicesForCategory.map((service) => service.name).toList();
 
     return Padding(
       padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
@@ -187,6 +193,23 @@ class _BookingFormState extends State<BookingForm> {
                 value: _selectedGender,
                 onChanged: (value) {
                   setState(() => _selectedGender = value);
+                },
+              ),
+              const SizedBox(height: 12),
+              DropdownField(
+                label: '카테고리',
+                value: _selectedCategory,
+                items: categories,
+                onChanged: (value) {
+                  if (value == null) return;
+                  final nextServices = _servicesForCategory(value);
+                  final nextService =
+                      nextServices.isNotEmpty ? nextServices.first : null;
+                  setState(() {
+                    _selectedCategory = value;
+                    _selectedService = nextService?.name ?? '';
+                    _selectedServicePrice = nextService?.price ?? 0;
+                  });
                 },
               ),
               const SizedBox(height: 12),
@@ -297,6 +320,24 @@ class _BookingFormState extends State<BookingForm> {
     return widget.blockedSlots.any((slot) {
       return _sameDay(slot.date, date) && slot.timeLabel == null;
     });
+  }
+
+  List<String> _categories() {
+    final seen = <String>{};
+    final categories = <String>[];
+    for (final service in widget.services) {
+      if (seen.add(service.category)) {
+        categories.add(service.category);
+      }
+    }
+    return categories;
+  }
+
+  List<ServiceItem> _servicesForCategory(String category) {
+    if (category.isEmpty) return const [];
+    return widget.services
+        .where((service) => service.category == category)
+        .toList();
   }
 
   ServiceItem? _findService(String name) {
