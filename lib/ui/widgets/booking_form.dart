@@ -254,7 +254,7 @@ class _BookingFormState extends State<BookingForm> {
   bool _isDateDisabled(DateTime date) {
     final normalized = _normalizeDate(date);
     final today = _normalizeDate(DateTime.now());
-    final lastDate = today.add(const Duration(days: 30));
+    final lastDate = DateTime(today.year + 1, today.month, today.day);
     return normalized.isBefore(today) || normalized.isAfter(lastDate);
   }
 
