@@ -46,7 +46,7 @@ class HomePage extends StatelessWidget {
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                       child: Text(
-                                        '예약 데이터를 불러오지 못했습니다. Supabase 스키마/정책을 확인해주세요.',
+                                        '예약 데이터를 불러오지 못했습니다. (${store.lastError})',
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyMedium
