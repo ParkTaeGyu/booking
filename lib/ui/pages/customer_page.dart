@@ -26,7 +26,7 @@ class CustomerPage extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   child: SingleChildScrollView(
                   child: BookingFormSection(
-                    services: BookingFormSection.defaultServices,
+                    services: store.services,
                     autoApprove: store.autoApprove,
                     bookings: store.bookings,
                     blockedSlots: store.blockedSlots,

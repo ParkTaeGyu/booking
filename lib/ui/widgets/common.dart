@@ -222,6 +222,19 @@ class InfoCard extends StatelessWidget {
   }
 }
 
+String formatPrice(int price) {
+  final buffer = StringBuffer();
+  final text = price.toString();
+  for (int i = 0; i < text.length; i++) {
+    final position = text.length - i;
+    buffer.write(text[i]);
+    if (position > 1 && position % 3 == 1) {
+      buffer.write(',');
+    }
+  }
+  return '${buffer.toString()}원';
+}
+
 class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,

@@ -9,6 +9,7 @@ class Booking {
     required this.phone,
     required this.gender,
     required this.service,
+    required this.servicePrice,
     required this.date,
     required this.timeLabel,
     required this.status,
@@ -22,6 +23,7 @@ class Booking {
   final String phone;
   final String gender;
   final String service;
+  final int servicePrice;
   final DateTime date;
   final String timeLabel;
   final BookingStatus status;
@@ -38,6 +40,7 @@ class Booking {
       phone: phone,
       gender: gender,
       service: service,
+      servicePrice: servicePrice,
       date: date,
       timeLabel: timeLabel,
       status: status ?? this.status,
@@ -54,6 +57,7 @@ class Booking {
       'phone': phone,
       'gender': gender,
       'service': service,
+      'servicePrice': servicePrice,
       'date': date.toIso8601String(),
       'timeLabel': timeLabel,
       'status': status.name,
@@ -69,6 +73,7 @@ class Booking {
       'phone': phone,
       'gender': gender,
       'service': service,
+      'service_price': servicePrice,
       'date': date.toIso8601String().split('T').first,
       'time_label': timeLabel,
       'status': status.name,
@@ -84,6 +89,7 @@ class Booking {
       phone: json['phone'] as String,
       gender: json['gender'] as String? ?? '미선택',
       service: json['service'] as String,
+      servicePrice: (json['service_price'] as num?)?.toInt() ?? 0,
       date: DateTime.parse(json['date'] as String),
       timeLabel: json['time_label'] as String,
       status: BookingStatus.values.firstWhere(
@@ -103,6 +109,7 @@ class Booking {
       phone: json['phone'] as String,
       gender: json['gender'] as String? ?? '미선택',
       service: json['service'] as String,
+      servicePrice: (json['servicePrice'] as num?)?.toInt() ?? 0,
       date: DateTime.parse(json['date'] as String),
       timeLabel: json['timeLabel'] as String,
       status: BookingStatus.values.firstWhere(

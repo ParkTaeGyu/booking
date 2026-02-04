@@ -6,12 +6,16 @@ create table if not exists public.bookings (
   phone text not null,
   gender text not null default '미선택',
   service text not null,
+  service_price integer not null default 0,
   date date not null,
   time_label text not null,
   status text not null default 'pending',
   created_at timestamptz not null default now(),
   auto_approved boolean not null default false
 );
+
+alter table if exists public.bookings
+  add column if not exists service_price integer not null default 0;
 
 create index if not exists bookings_date_time_idx
   on public.bookings (date, time_label);

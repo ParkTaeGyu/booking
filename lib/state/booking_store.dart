@@ -2,33 +2,40 @@ import 'package:flutter/material.dart';
 
 import '../models/booking.dart';
 import '../models/blocked_slot.dart';
+import '../models/service_item.dart';
 import '../config/env.dart';
 import '../services/booking_repository.dart';
 import '../services/blocked_slot_repository.dart';
 import '../services/booking_storage.dart';
+import '../services/service_repository.dart';
 
 class BookingStore extends ChangeNotifier {
   BookingStore({
     required BookingRepository repository,
     required BlockedSlotRepository blockedSlotRepository,
     required BookingStorage settingsStorage,
+    required ServiceRepository serviceRepository,
   })  : _repository = repository,
         _blockedSlotRepository = blockedSlotRepository,
-        _settingsStorage = settingsStorage;
+        _settingsStorage = settingsStorage,
+        _serviceRepository = serviceRepository;
 
   final BookingRepository _repository;
   final BlockedSlotRepository _blockedSlotRepository;
   final BookingStorage _settingsStorage;
+  final ServiceRepository _serviceRepository;
   bool _autoApprove = true;
   bool _ready = false;
   String? _lastError;
   final List<Booking> _bookings = [];
   final List<BlockedSlot> _blockedSlots = [];
+  final List<ServiceItem> _services = [];
 
   bool get ready => _ready;
   bool get autoApprove => _autoApprove;
   List<Booking> get bookings => List.unmodifiable(_bookings);
   List<BlockedSlot> get blockedSlots => List.unmodifiable(_blockedSlots);
+  List<ServiceItem> get services => List.unmodifiable(_services);
   String? get lastError => _lastError;
 
   int get pendingCount =>
@@ -44,6 +51,7 @@ class BookingStore extends ChangeNotifier {
       }
       final loadedBookings = await _repository.fetchAll();
       final loadedBlockedSlots = await _blockedSlotRepository.fetchAll();
+      final loadedServices = await _serviceRepository.fetchAll();
       final autoApprove = await _settingsStorage.loadAutoApprove();
 
       _bookings
@@ -52,6 +60,9 @@ class BookingStore extends ChangeNotifier {
       _blockedSlots
         ..clear()
         ..addAll(loadedBlockedSlots);
+      _services
+        ..clear()
+        ..addAll(loadedServices);
       if (autoApprove != null) {
         _autoApprove = autoApprove;
       }

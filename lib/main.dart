@@ -5,6 +5,7 @@ import 'config/env.dart';
 import 'services/booking_storage.dart';
 import 'services/supabase_booking_repository.dart';
 import 'services/supabase_blocked_slot_repository.dart';
+import 'services/supabase_service_repository.dart';
 import 'state/booking_store.dart';
 import 'ui/pages/home_page.dart';
 
@@ -34,6 +35,7 @@ class _SalonBookingAppState extends State<SalonBookingApp> {
       repository: SupabaseBookingRepository(),
       blockedSlotRepository: SupabaseBlockedSlotRepository(),
       settingsStorage: BookingStorage(),
+      serviceRepository: SupabaseServiceRepository(),
     );
     _store.load();
   }

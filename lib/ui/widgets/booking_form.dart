@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/booking.dart';
 import '../../models/blocked_slot.dart';
+import '../../models/service_item.dart';
 import '../../utils/holiday_calendar.dart';
 import 'common.dart';
 import 'time_slot_picker.dart';
@@ -17,9 +18,7 @@ class BookingFormSection extends StatelessWidget {
     required this.onCreate,
   });
 
-  static const defaultServices = ['컷 + 스타일', '펌', '염색', '클리닉 집중 케어'];
-
-  final List<String> services;
+  final List<ServiceItem> services;
   final bool autoApprove;
   final List<Booking> bookings;
   final List<BlockedSlot> blockedSlots;
@@ -52,7 +51,7 @@ class BookingForm extends StatefulWidget {
     required this.onCreate,
   });
 
-  final List<String> services;
+  final List<ServiceItem> services;
   final bool autoApprove;
   final List<Booking> bookings;
   final List<BlockedSlot> blockedSlots;
@@ -70,13 +69,17 @@ class _BookingFormState extends State<BookingForm> {
 
   DateTime _selectedDate = DateTime.now();
   String _selectedService = '';
+  int _selectedServicePrice = 0;
   String _selectedTime = '';
   String _selectedGender = '남성';
 
   @override
   void initState() {
     super.initState();
-    _selectedService = widget.services.first;
+    if (widget.services.isNotEmpty) {
+      _selectedService = widget.services.first.name;
+      _selectedServicePrice = widget.services.first.price;
+    }
     _selectedDate = _normalizeDate(DateTime.now());
     final available = _availableSlots(_selectedDate);
     _selectedTime = available.isNotEmpty ? available.first : '';
@@ -91,9 +94,21 @@ class _BookingFormState extends State<BookingForm> {
   }
 
   @override
+  void didUpdateWidget(covariant BookingForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.services.isNotEmpty && _selectedService.isEmpty) {
+      setState(() {
+        _selectedService = widget.services.first.name;
+        _selectedServicePrice = widget.services.first.price;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final slots = _generateSlotsForDate(_selectedDate);
+    final serviceNames = widget.services.map((service) => service.name).toList();
 
     return Padding(
       padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
@@ -111,93 +126,134 @@ class _BookingFormState extends State<BookingForm> {
               ).textTheme.bodyMedium?.copyWith(color: Colors.black54),
             ),
             const SizedBox(height: 16),
-            WeeklyCalendar(
-              controller: _weekController,
-              selectedDate: _selectedDate,
-              onWeekChanged: (offset) {
-                final start = _startOfWeek(
-                  _normalizeDate(DateTime.now()),
-                ).add(Duration(days: offset * 7));
-                setState(() {
-                  final keepCurrent =
-                      _isSameWeek(_selectedDate, start) &&
-                      !_isDateDisabled(_selectedDate);
-                  final nextSelected = keepCurrent
-                      ? _selectedDate
-                      : _firstEnabledDate(start);
-                  _selectedDate = nextSelected;
-                  final available = _availableSlots(_selectedDate);
-                  _selectedTime = available.isNotEmpty ? available.first : '';
-                });
-              },
-              onDateSelected: (date) {
-                setState(() {
-                  _selectedDate = date;
-                  final available = _availableSlots(_selectedDate);
-                  _selectedTime = available.isNotEmpty ? available.first : '';
-                });
-              },
-              isDisabled: _isDateDisabled,
-              isHoliday: (date) => isHoliday(date),
-              isDayBlocked: _isDayBlocked,
-            ),
-            const SizedBox(height: 16),
-            InputField(
-              label: '이름',
-              controller: _nameController,
-              hint: '예) 김지아',
-              validator: (value) =>
-                  value == null || value.trim().isEmpty ? '이름을 입력해주세요.' : null,
-            ),
-            const SizedBox(height: 12),
-            InputField(
-              label: '연락처',
-              controller: _phoneController,
-              hint: '010-0000-0000',
-              keyboardType: TextInputType.phone,
-              validator: (value) =>
-                  value == null || value.trim().isEmpty ? '연락처를 입력해주세요.' : null,
-            ),
-            const SizedBox(height: 12),
-            _GenderPicker(
-              value: _selectedGender,
-              onChanged: (value) {
-                setState(() => _selectedGender = value);
-              },
-            ),
-            const SizedBox(height: 12),
-            DropdownField(
-              label: '서비스',
-              value: _selectedService,
-              items: widget.services,
-              onChanged: (value) {
-                if (value == null) return;
-                setState(() => _selectedService = value);
-              },
-            ),
-            const SizedBox(height: 12),
-            TimeSlotPicker(
-              slots: slots,
-              selectedTime: _selectedTime,
-              isTaken: (time) => _isTaken(time) || _isBlocked(time),
-              allDisabled: _isDayBlocked(_selectedDate),
-              onSelected: (time) {
-                setState(() => _selectedTime = time);
-              },
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.secondary,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: const Text('예약 신청'),
+            if (widget.services.isEmpty)
+              Text(
+                '서비스 정보를 불러오는 중입니다.',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: Colors.black54),
+              )
+            else ...[
+              WeeklyCalendar(
+                controller: _weekController,
+                selectedDate: _selectedDate,
+                onWeekChanged: (offset) {
+                  final start = _startOfWeek(
+                    _normalizeDate(DateTime.now()),
+                  ).add(Duration(days: offset * 7));
+                  setState(() {
+                    final keepCurrent =
+                        _isSameWeek(_selectedDate, start) &&
+                        !_isDateDisabled(_selectedDate);
+                    final nextSelected = keepCurrent
+                        ? _selectedDate
+                        : _firstEnabledDate(start);
+                    _selectedDate = nextSelected;
+                    final available = _availableSlots(_selectedDate);
+                    _selectedTime = available.isNotEmpty ? available.first : '';
+                  });
+                },
+                onDateSelected: (date) {
+                  setState(() {
+                    _selectedDate = date;
+                    final available = _availableSlots(_selectedDate);
+                    _selectedTime = available.isNotEmpty ? available.first : '';
+                  });
+                },
+                isDisabled: _isDateDisabled,
+                isHoliday: (date) => isHoliday(date),
+                isDayBlocked: _isDayBlocked,
               ),
-            ),
+              const SizedBox(height: 16),
+              InputField(
+                label: '이름',
+                controller: _nameController,
+                hint: '예) 김지아',
+                validator: (value) =>
+                    value == null || value.trim().isEmpty ? '이름을 입력해주세요.' : null,
+              ),
+              const SizedBox(height: 12),
+              InputField(
+                label: '연락처',
+                controller: _phoneController,
+                hint: '010-0000-0000',
+                keyboardType: TextInputType.phone,
+                validator: (value) =>
+                    value == null || value.trim().isEmpty ? '연락처를 입력해주세요.' : null,
+              ),
+              const SizedBox(height: 12),
+              _GenderPicker(
+                value: _selectedGender,
+                onChanged: (value) {
+                  setState(() => _selectedGender = value);
+                },
+              ),
+              const SizedBox(height: 12),
+              DropdownField(
+                label: '서비스',
+                value: _selectedService,
+                items: serviceNames,
+                itemBuilder: (context, item) {
+                  final service = _findService(item);
+                  final priceLabel =
+                      service == null ? '' : formatPrice(service.price);
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(item),
+                      if (priceLabel.isNotEmpty)
+                        Text(
+                          priceLabel,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(color: Colors.black45),
+                        ),
+                    ],
+                  );
+                },
+                onChanged: (value) {
+                  if (value == null) return;
+                  final service = _findService(value);
+                  setState(() {
+                    _selectedService = value;
+                    _selectedServicePrice = service?.price ?? 0;
+                  });
+                },
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '가격 ${formatPrice(_selectedServicePrice)}',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: Colors.black54),
+              ),
+              const SizedBox(height: 12),
+              TimeSlotPicker(
+                slots: slots,
+                selectedTime: _selectedTime,
+                isTaken: (time) => _isTaken(time) || _isBlocked(time),
+                allDisabled: _isDayBlocked(_selectedDate),
+                onSelected: (time) {
+                  setState(() => _selectedTime = time);
+                },
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.secondary,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: const Text('예약 신청'),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -241,6 +297,13 @@ class _BookingFormState extends State<BookingForm> {
     return widget.blockedSlots.any((slot) {
       return _sameDay(slot.date, date) && slot.timeLabel == null;
     });
+  }
+
+  ServiceItem? _findService(String name) {
+    for (final service in widget.services) {
+      if (service.name == name) return service;
+    }
+    return null;
   }
 
   bool _sameDay(DateTime a, DateTime b) {
@@ -309,6 +372,12 @@ class _BookingFormState extends State<BookingForm> {
       ).showSnackBar(const SnackBar(content: Text('예약 시간을 선택해주세요.')));
       return;
     }
+    if (_selectedService.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('서비스를 선택해주세요.')));
+      return;
+    }
     if (_isTaken(_selectedTime)) {
       ScaffoldMessenger.of(
         context,
@@ -322,6 +391,7 @@ class _BookingFormState extends State<BookingForm> {
       phone: _phoneController.text.trim(),
       gender: _selectedGender,
       service: _selectedService,
+      servicePrice: _selectedServicePrice,
       date: _selectedDate,
       timeLabel: _selectedTime,
       status: widget.autoApprove

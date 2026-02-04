@@ -489,7 +489,7 @@ class _AdminBookingCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              '${formatDate(booking.date)} · ${booking.timeLabel}',
+              '${formatDate(booking.date)} · ${booking.timeLabel} · ${formatPrice(booking.servicePrice)}',
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: Colors.black54),
