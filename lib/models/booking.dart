@@ -10,6 +10,7 @@ class Booking {
     required this.gender,
     required this.service,
     required this.servicePrice,
+    required this.items,
     required this.date,
     required this.timeLabel,
     required this.status,
@@ -24,6 +25,7 @@ class Booking {
   final String gender;
   final String service;
   final int servicePrice;
+  final List<BookingItem> items;
   final DateTime date;
   final String timeLabel;
   final BookingStatus status;
@@ -41,6 +43,7 @@ class Booking {
       gender: gender,
       service: service,
       servicePrice: servicePrice,
+      items: items,
       date: date,
       timeLabel: timeLabel,
       status: status ?? this.status,
@@ -58,6 +61,7 @@ class Booking {
       'gender': gender,
       'service': service,
       'servicePrice': servicePrice,
+      'items': items.map((item) => item.toJson()).toList(),
       'date': date.toIso8601String(),
       'timeLabel': timeLabel,
       'status': status.name,
@@ -90,6 +94,7 @@ class Booking {
       gender: json['gender'] as String? ?? '미선택',
       service: json['service'] as String,
       servicePrice: (json['service_price'] as num?)?.toInt() ?? 0,
+      items: const [],
       date: DateTime.parse(json['date'] as String),
       timeLabel: json['time_label'] as String,
       status: BookingStatus.values.firstWhere(
@@ -110,6 +115,11 @@ class Booking {
       gender: json['gender'] as String? ?? '미선택',
       service: json['service'] as String,
       servicePrice: (json['servicePrice'] as num?)?.toInt() ?? 0,
+      items: (json['items'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(BookingItem.fromJson)
+              .toList() ??
+          const [],
       date: DateTime.parse(json['date'] as String),
       timeLabel: json['timeLabel'] as String,
       status: BookingStatus.values.firstWhere(
@@ -128,6 +138,38 @@ class StatusMeta {
 
   final String label;
   final Color color;
+}
+
+class BookingItem {
+  const BookingItem({
+    required this.serviceId,
+    required this.name,
+    required this.price,
+    required this.category,
+  });
+
+  final String serviceId;
+  final String name;
+  final int price;
+  final String category;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'serviceId': serviceId,
+      'name': name,
+      'price': price,
+      'category': category,
+    };
+  }
+
+  static BookingItem fromJson(Map<String, dynamic> json) {
+    return BookingItem(
+      serviceId: json['serviceId'] as String,
+      name: json['name'] as String,
+      price: (json['price'] as num?)?.toInt() ?? 0,
+      category: json['category'] as String? ?? '기타',
+    );
+  }
 }
 
 StatusMeta statusMeta(BookingStatus status) {

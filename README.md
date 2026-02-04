@@ -11,7 +11,7 @@ Flutter 기반 미용실 예약 관리 시스템입니다. 고객 예약 신청,
 
 ## 시스템 개요
 
-- 고객 예약 신청 화면
+- 고객 예약 신청 화면 (카테고리/다중 서비스 선택)
 - 주간 캘린더 + 30분 슬롯 예약
 - 공휴일/일요일 강조 표시 및 조기 마감(17:30)
 - 예약/차단 상태에 따라 예약 가능 여부 자동 처리
@@ -60,6 +60,7 @@ flowchart LR
 ## 데이터 모델
 
 - bookings
+- booking_items
 - services
 - blocked_slots
 
@@ -71,6 +72,7 @@ flowchart LR
 ## Supabase SQL
 
 - `supabase/booking_schema.sql`
+- `supabase/booking_items_schema.sql`
 - `supabase/services_schema.sql`
 - `supabase/blocked_slots_schema.sql`
 

@@ -494,6 +494,16 @@ class _AdminBookingCard extends StatelessWidget {
                 context,
               ).textTheme.bodyMedium?.copyWith(color: Colors.black54),
             ),
+            if (booking.items.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  '서비스: ${booking.items.map((item) => item.name).join(', ')}',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.black45),
+                ),
+              ),
             const SizedBox(height: 6),
             Text(
               '연락처 ${booking.phone} · ${booking.gender}',
@@ -727,35 +737,53 @@ class _DaySchedulePanel extends StatelessWidget {
                             final status = statusMeta(booking.status);
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 6),
-                              child: Row(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Expanded(
-                                    child: Text(
-                                      '${booking.customerName} · ${booking.service}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          '${booking.customerName} · ${booking.service}',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium,
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: status.color
+                                              .withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          status.label,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall?.copyWith(
+                                                color: status.color,
+                                              ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
+                                  if (booking.items.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 4),
+                                      child: Text(
+                                        booking.items
+                                            .map((item) => item.name)
+                                            .join(', '),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(color: Colors.black45),
+                                      ),
                                     ),
-                                    decoration: BoxDecoration(
-                                      color: status.color
-                                          .withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      status.label,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall?.copyWith(
-                                            color: status.color,
-                                          ),
-                                    ),
-                                  ),
                                 ],
                               ),
                             );

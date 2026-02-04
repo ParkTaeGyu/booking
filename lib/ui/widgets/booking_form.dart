@@ -69,8 +69,7 @@ class _BookingFormState extends State<BookingForm> {
 
   DateTime _selectedDate = DateTime.now();
   String _selectedCategory = '';
-  String _selectedService = '';
-  int _selectedServicePrice = 0;
+  final Map<String, ServiceItem> _selectedServices = {};
   String _selectedTime = '';
   String _selectedGender = '남성';
 
@@ -79,8 +78,7 @@ class _BookingFormState extends State<BookingForm> {
     super.initState();
     if (widget.services.isNotEmpty) {
       _selectedCategory = widget.services.first.category;
-      _selectedService = widget.services.first.name;
-      _selectedServicePrice = widget.services.first.price;
+      _selectedServices[widget.services.first.id] = widget.services.first;
     }
     _selectedDate = _normalizeDate(DateTime.now());
     final available = _availableSlots(_selectedDate);
@@ -98,11 +96,10 @@ class _BookingFormState extends State<BookingForm> {
   @override
   void didUpdateWidget(covariant BookingForm oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.services.isNotEmpty && _selectedService.isEmpty) {
+    if (widget.services.isNotEmpty && _selectedServices.isEmpty) {
       setState(() {
         _selectedCategory = widget.services.first.category;
-        _selectedService = widget.services.first.name;
-        _selectedServicePrice = widget.services.first.price;
+        _selectedServices[widget.services.first.id] = widget.services.first;
       });
     }
   }
@@ -113,8 +110,10 @@ class _BookingFormState extends State<BookingForm> {
     final slots = _generateSlotsForDate(_selectedDate);
     final categories = _categories();
     final servicesForCategory = _servicesForCategory(_selectedCategory);
-    final serviceNames =
-        servicesForCategory.map((service) => service.name).toList();
+    final totalPrice = _selectedServices.values.fold<int>(
+      0,
+      (sum, item) => sum + item.price,
+    );
 
     return Padding(
       padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
@@ -202,52 +201,28 @@ class _BookingFormState extends State<BookingForm> {
                 items: categories,
                 onChanged: (value) {
                   if (value == null) return;
-                  final nextServices = _servicesForCategory(value);
-                  final nextService =
-                      nextServices.isNotEmpty ? nextServices.first : null;
                   setState(() {
                     _selectedCategory = value;
-                    _selectedService = nextService?.name ?? '';
-                    _selectedServicePrice = nextService?.price ?? 0;
                   });
                 },
               ),
               const SizedBox(height: 12),
-              DropdownField(
-                label: '서비스',
-                value: _selectedService,
-                items: serviceNames,
-                itemBuilder: (context, item) {
-                  final service = _findService(item);
-                  final priceLabel =
-                      service == null ? '' : formatPrice(service.price);
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(item),
-                      if (priceLabel.isNotEmpty)
-                        Text(
-                          priceLabel,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(color: Colors.black45),
-                        ),
-                    ],
-                  );
-                },
-                onChanged: (value) {
-                  if (value == null) return;
-                  final service = _findService(value);
+              _ServiceMultiSelect(
+                services: servicesForCategory,
+                selected: _selectedServices,
+                onToggle: (service) {
                   setState(() {
-                    _selectedService = value;
-                    _selectedServicePrice = service?.price ?? 0;
+                    if (_selectedServices.containsKey(service.id)) {
+                      _selectedServices.remove(service.id);
+                    } else {
+                      _selectedServices[service.id] = service;
+                    }
                   });
                 },
               ),
               const SizedBox(height: 8),
               Text(
-                '가격 ${formatPrice(_selectedServicePrice)}',
+                '총액 ${formatPrice(totalPrice)}',
                 style: Theme.of(context)
                     .textTheme
                     .bodyMedium
@@ -340,11 +315,10 @@ class _BookingFormState extends State<BookingForm> {
         .toList();
   }
 
-  ServiceItem? _findService(String name) {
-    for (final service in widget.services) {
-      if (service.name == name) return service;
-    }
-    return null;
+  String _buildServiceSummary(List<ServiceItem> items) {
+    if (items.isEmpty) return '';
+    if (items.length == 1) return items.first.name;
+    return '${items.first.name} 외 ${items.length - 1}건';
   }
 
   bool _sameDay(DateTime a, DateTime b) {
@@ -413,7 +387,7 @@ class _BookingFormState extends State<BookingForm> {
       ).showSnackBar(const SnackBar(content: Text('예약 시간을 선택해주세요.')));
       return;
     }
-    if (_selectedService.isEmpty) {
+    if (_selectedServices.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('서비스를 선택해주세요.')));
@@ -426,13 +400,27 @@ class _BookingFormState extends State<BookingForm> {
       return;
     }
 
+    final items = _selectedServices.values.toList();
+    final summary = _buildServiceSummary(items);
+    final totalPrice = items.fold<int>(0, (sum, item) => sum + item.price);
+
     final newBooking = Booking(
       id: 'bk-${DateTime.now().millisecondsSinceEpoch}',
       customerName: _nameController.text.trim(),
       phone: _phoneController.text.trim(),
       gender: _selectedGender,
-      service: _selectedService,
-      servicePrice: _selectedServicePrice,
+      service: summary,
+      servicePrice: totalPrice,
+      items: items
+          .map(
+            (item) => BookingItem(
+              serviceId: item.id,
+              name: item.name,
+              price: item.price,
+              category: item.category,
+            ),
+          )
+          .toList(),
       date: _selectedDate,
       timeLabel: _selectedTime,
       status: widget.autoApprove
@@ -525,6 +513,60 @@ class _GenderChip extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ServiceMultiSelect extends StatelessWidget {
+  const _ServiceMultiSelect({
+    required this.services,
+    required this.selected,
+    required this.onToggle,
+  });
+
+  final List<ServiceItem> services;
+  final Map<String, ServiceItem> selected;
+  final ValueChanged<ServiceItem> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    if (services.isEmpty) {
+      return Text(
+        '해당 카테고리에 서비스가 없습니다.',
+        style: Theme.of(context)
+            .textTheme
+            .bodyMedium
+            ?.copyWith(color: Colors.black45),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: services.map((service) {
+        final isSelected = selected.containsKey(service.id);
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2)
+                : const Color(0xFFF7F4EF),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: CheckboxListTile(
+            value: isSelected,
+            dense: true,
+            onChanged: (_) => onToggle(service),
+            title: Text(service.name),
+            subtitle: Text(
+              formatPrice(service.price),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: Colors.black45),
+            ),
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
+        );
+      }).toList(),
     );
   }
 }
