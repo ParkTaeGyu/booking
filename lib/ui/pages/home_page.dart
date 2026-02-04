@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../state/booking_store.dart';
+import '../../config/env.dart';
 import '../widgets/common.dart';
 import 'admin_page.dart';
 import 'customer_page.dart';
@@ -36,6 +37,23 @@ class HomePage extends StatelessWidget {
                         child: store.ready
                             ? Column(
                                 children: [
+                                  if (!Env.isConfigured)
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(12),
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.redAccent.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: Text(
+                                        '환경변수(SUPABASE_URL / SUPABASE_ANON_KEY)가 설정되지 않았습니다.',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(color: Colors.redAccent),
+                                      ),
+                                    ),
                                   if (store.lastError != null)
                                     Container(
                                       width: double.infinity,

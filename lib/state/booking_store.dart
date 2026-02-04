@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/booking.dart';
+import '../config/env.dart';
 import '../services/booking_repository.dart';
 import '../services/booking_storage.dart';
 
@@ -30,6 +31,10 @@ class BookingStore extends ChangeNotifier {
 
   Future<void> load() async {
     try {
+      if (!Env.isConfigured) {
+        _lastError = 'Supabase 환경변수가 설정되지 않았습니다.';
+        return;
+      }
       final loadedBookings = await _repository.fetchAll();
       final autoApprove = await _settingsStorage.loadAutoApprove();
 
