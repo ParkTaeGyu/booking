@@ -20,11 +20,21 @@ class SupabaseBookingRepository implements BookingRepository {
           .order('time_label', ascending: true);
 
       if (response == null) {
+        // ignore: avoid_print
+        print('[Supabase] fetchAll response is null');
         return [];
       }
 
-      final data = response as List<dynamic>;
-      return data.map((row) => Booking.fromMap(row as Map<String, dynamic>)).toList();
+      if (response is! List) {
+        // ignore: avoid_print
+        print('[Supabase] fetchAll unexpected response: ${response.runtimeType}');
+        return [];
+      }
+
+      return response
+          .whereType<Map<String, dynamic>>()
+          .map(Booking.fromMap)
+          .toList();
     } on PostgrestException catch (error) {
       // Surface detailed error for debugging (visible in console).
       // ignore: avoid_print
