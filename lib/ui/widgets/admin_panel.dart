@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../models/booking.dart';
+import '../../models/blocked_slot.dart';
+import '../../utils/holiday_calendar.dart';
 import 'common.dart';
 
 enum AdminFilter { all, pending, confirmed, rejected }
@@ -10,17 +12,23 @@ class AdminPanel extends StatefulWidget {
   const AdminPanel({
     super.key,
     required this.bookings,
+    required this.blockedSlots,
     required this.pendingCount,
     required this.confirmedCount,
     required this.onApprove,
     required this.onReject,
+    required this.onBlockSlot,
+    required this.onUnblockSlot,
   });
 
   final List<Booking> bookings;
+  final List<BlockedSlot> blockedSlots;
   final int pendingCount;
   final int confirmedCount;
   final ValueChanged<String> onApprove;
   final ValueChanged<String> onReject;
+  final void Function(DateTime date, {String? timeLabel}) onBlockSlot;
+  final void Function(DateTime date, {String? timeLabel}) onUnblockSlot;
 
   @override
   State<AdminPanel> createState() => _AdminPanelState();
@@ -29,6 +37,7 @@ class AdminPanel extends StatefulWidget {
 class _AdminPanelState extends State<AdminPanel> {
   AdminFilter _filter = AdminFilter.all;
   AdminSort _sort = AdminSort.dateAsc;
+  DateTime _selectedDate = DateTime.now();
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +47,20 @@ class _AdminPanelState extends State<AdminPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _BlockManager(
+          date: _selectedDate,
+          slots: _generateSlotsForDate(_selectedDate),
+          isDayBlocked: _isDayBlocked(_selectedDate),
+          isSlotBlocked: (time) => _isSlotBlocked(_selectedDate, time),
+          onDateChanged: (date) => setState(() => _selectedDate = date),
+          onBlockDay: () => widget.onBlockSlot(_selectedDate),
+          onUnblockDay: () => widget.onUnblockSlot(_selectedDate),
+          onBlockSlot: (time) =>
+              widget.onBlockSlot(_selectedDate, timeLabel: time),
+          onUnblockSlot: (time) =>
+              widget.onUnblockSlot(_selectedDate, timeLabel: time),
+        ),
+        const SizedBox(height: 16),
         Row(
           children: [
             Expanded(
@@ -148,6 +171,41 @@ class _AdminPanelState extends State<AdminPanel> {
     final hour = int.tryParse(parts[0]) ?? 0;
     final minute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
     return hour * 60 + minute;
+  }
+
+  bool _sameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  bool _isDayBlocked(DateTime date) {
+    return widget.blockedSlots.any(
+      (slot) => _sameDay(slot.date, date) && slot.timeLabel == null,
+    );
+  }
+
+  bool _isSlotBlocked(DateTime date, String time) {
+    return widget.blockedSlots.any(
+      (slot) => _sameDay(slot.date, date) && slot.timeLabel == time,
+    );
+  }
+
+  List<String> _generateSlotsForDate(DateTime date) {
+    final isEarlyClose = isShortDay(date);
+    final lastHour = isEarlyClose ? 17 : 19;
+    final lastMinute = isEarlyClose ? 30 : 0;
+
+    final slots = <String>[];
+    for (int hour = 10; hour < lastHour; hour++) {
+      final hourLabel = hour.toString().padLeft(2, '0');
+      slots.add('$hourLabel:00');
+      slots.add('$hourLabel:30');
+    }
+    final lastHourLabel = lastHour.toString().padLeft(2, '0');
+    slots.add('$lastHourLabel:00');
+    if (lastMinute == 30) {
+      slots.add('$lastHourLabel:30');
+    }
+    return slots;
   }
 }
 
@@ -410,6 +468,129 @@ class _AdminBookingCard extends StatelessWidget {
                   ],
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BlockManager extends StatelessWidget {
+  const _BlockManager({
+    required this.date,
+    required this.slots,
+    required this.isDayBlocked,
+    required this.isSlotBlocked,
+    required this.onDateChanged,
+    required this.onBlockDay,
+    required this.onUnblockDay,
+    required this.onBlockSlot,
+    required this.onUnblockSlot,
+  });
+
+  final DateTime date;
+  final List<String> slots;
+  final bool isDayBlocked;
+  final bool Function(String) isSlotBlocked;
+  final ValueChanged<DateTime> onDateChanged;
+  final VoidCallback onBlockDay;
+  final VoidCallback onUnblockDay;
+  final ValueChanged<String> onBlockSlot;
+  final ValueChanged<String> onUnblockSlot;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('차단 관리', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            CalendarDatePicker(
+              initialDate: date,
+              firstDate: DateTime.now(),
+              lastDate: DateTime.now().add(const Duration(days: 365)),
+              onDateChanged: onDateChanged,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Text(
+                  '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: Colors.black54),
+                ),
+                const Spacer(),
+                isDayBlocked
+                    ? OutlinedButton(
+                        onPressed: onUnblockDay,
+                        child: const Text('전체 해제'),
+                      )
+                    : ElevatedButton(
+                        onPressed: onBlockDay,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.secondary,
+                          foregroundColor: Colors.black,
+                        ),
+                        child: const Text('하루 전체 차단'),
+                      ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+                final columns = width >= 720 ? 6 : width >= 520 ? 4 : 3;
+                return GridView.builder(
+                  itemCount: slots.length,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 8,
+                    childAspectRatio: 2.4,
+                  ),
+                  itemBuilder: (context, index) {
+                    final time = slots[index];
+                    final blocked = isSlotBlocked(time);
+                    return GestureDetector(
+                      onTap: isDayBlocked
+                          ? null
+                          : blocked
+                              ? () => onUnblockSlot(time)
+                              : () => onBlockSlot(time),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: blocked
+                              ? Colors.redAccent.withValues(alpha: 0.25)
+                              : const Color(0xFFF7F4EF),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: blocked
+                                ? Colors.redAccent
+                                : Colors.transparent,
+                          ),
+                        ),
+                        child: Text(
+                          time,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: blocked ? Colors.redAccent : Colors.black87,
+                              ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ],
         ),
       ),

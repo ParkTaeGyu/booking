@@ -19,23 +19,28 @@ class AdminPage extends StatelessWidget {
           appBar: AppBar(
             title: const Text('예약 관리 (관리자)'),
           ),
-          body: Stack(
-            children: [
-              const BackgroundShape(),
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  child: AdminPanel(
-                    bookings: store.bookings,
-                    pendingCount: store.pendingCount,
-                    confirmedCount: store.confirmedCount,
-                    onApprove: (id) => store.updateStatus(id, BookingStatus.confirmed),
-                    onReject: (id) => store.updateStatus(id, BookingStatus.rejected),
-                  ),
-                ),
+      body: Stack(
+        children: [
+          const BackgroundShape(),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: AdminPanel(
+                bookings: store.bookings,
+                blockedSlots: store.blockedSlots,
+                pendingCount: store.pendingCount,
+                confirmedCount: store.confirmedCount,
+                onApprove: (id) => store.updateStatus(id, BookingStatus.confirmed),
+                onReject: (id) => store.updateStatus(id, BookingStatus.rejected),
+                onBlockSlot: (date, {timeLabel}) =>
+                    store.addBlockedSlot(date, timeLabel: timeLabel),
+                onUnblockSlot: (date, {timeLabel}) =>
+                    store.removeBlockedSlot(date, timeLabel: timeLabel),
               ),
-            ],
+            ),
           ),
+        ],
+      ),
         );
       },
     );

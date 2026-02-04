@@ -25,14 +25,15 @@ class CustomerPage extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   child: SingleChildScrollView(
-                    child: BookingFormSection(
-                      services: BookingFormSection.defaultServices,
-                      autoApprove: store.autoApprove,
-                      bookings: store.bookings,
-                      onCreate: store.addBooking,
-                    ),
+                  child: BookingFormSection(
+                    services: BookingFormSection.defaultServices,
+                    autoApprove: store.autoApprove,
+                    bookings: store.bookings,
+                    blockedSlots: store.blockedSlots,
+                    onCreate: store.addBooking,
                   ),
                 ),
+              ),
               ),
             ],
           ),

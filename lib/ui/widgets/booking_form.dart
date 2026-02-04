@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/booking.dart';
+import '../../models/blocked_slot.dart';
 import '../../utils/holiday_calendar.dart';
 import 'common.dart';
 import 'time_slot_picker.dart';
@@ -12,6 +13,7 @@ class BookingFormSection extends StatelessWidget {
     required this.services,
     required this.autoApprove,
     required this.bookings,
+    required this.blockedSlots,
     required this.onCreate,
   });
 
@@ -25,6 +27,7 @@ class BookingFormSection extends StatelessWidget {
   final List<String> services;
   final bool autoApprove;
   final List<Booking> bookings;
+  final List<BlockedSlot> blockedSlots;
   final ValueChanged<Booking> onCreate;
 
   @override
@@ -36,6 +39,7 @@ class BookingFormSection extends StatelessWidget {
           services: services,
           autoApprove: autoApprove,
           bookings: bookings,
+          blockedSlots: blockedSlots,
           onCreate: onCreate,
         ),
       ),
@@ -49,12 +53,14 @@ class BookingForm extends StatefulWidget {
     required this.services,
     required this.autoApprove,
     required this.bookings,
+    required this.blockedSlots,
     required this.onCreate,
   });
 
   final List<String> services;
   final bool autoApprove;
   final List<Booking> bookings;
+  final List<BlockedSlot> blockedSlots;
   final ValueChanged<Booking> onCreate;
 
   @override
@@ -182,7 +188,7 @@ class _BookingFormState extends State<BookingForm> {
             TimeSlotPicker(
               slots: slots,
               selectedTime: _selectedTime,
-              isTaken: _isTaken,
+              isTaken: (time) => _isTaken(time) || _isBlocked(time),
               onSelected: (time) {
                 setState(() => _selectedTime = time);
               },
@@ -233,6 +239,18 @@ class _BookingFormState extends State<BookingForm> {
     });
   }
 
+  bool _isBlocked(String time) {
+    return widget.blockedSlots.any((slot) {
+      return _sameDay(slot.date, _selectedDate) && slot.timeLabel == time;
+    });
+  }
+
+  bool _isDayBlocked(DateTime date) {
+    return widget.blockedSlots.any((slot) {
+      return _sameDay(slot.date, date) && slot.timeLabel == null;
+    });
+  }
+
   bool _sameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
@@ -258,6 +276,9 @@ class _BookingFormState extends State<BookingForm> {
     if (normalized.isBefore(today) || normalized.isAfter(lastDate)) {
       return true;
     }
+    if (_isDayBlocked(normalized)) {
+      return true;
+    }
     return _availableSlots(normalized).isEmpty;
   }
 
@@ -277,6 +298,9 @@ class _BookingFormState extends State<BookingForm> {
               return booking.status == BookingStatus.confirmed &&
                   _sameDay(booking.date, date) &&
                   booking.timeLabel == time;
+            }))
+        .where((time) => !widget.blockedSlots.any((slot) {
+              return _sameDay(slot.date, date) && slot.timeLabel == time;
             }))
         .toList();
   }

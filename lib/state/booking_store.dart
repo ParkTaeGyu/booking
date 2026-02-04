@@ -1,27 +1,34 @@
 import 'package:flutter/material.dart';
 
 import '../models/booking.dart';
+import '../models/blocked_slot.dart';
 import '../config/env.dart';
 import '../services/booking_repository.dart';
+import '../services/blocked_slot_repository.dart';
 import '../services/booking_storage.dart';
 
 class BookingStore extends ChangeNotifier {
   BookingStore({
     required BookingRepository repository,
+    required BlockedSlotRepository blockedSlotRepository,
     required BookingStorage settingsStorage,
   })  : _repository = repository,
+        _blockedSlotRepository = blockedSlotRepository,
         _settingsStorage = settingsStorage;
 
   final BookingRepository _repository;
+  final BlockedSlotRepository _blockedSlotRepository;
   final BookingStorage _settingsStorage;
   bool _autoApprove = true;
   bool _ready = false;
   String? _lastError;
   final List<Booking> _bookings = [];
+  final List<BlockedSlot> _blockedSlots = [];
 
   bool get ready => _ready;
   bool get autoApprove => _autoApprove;
   List<Booking> get bookings => List.unmodifiable(_bookings);
+  List<BlockedSlot> get blockedSlots => List.unmodifiable(_blockedSlots);
   String? get lastError => _lastError;
 
   int get pendingCount =>
@@ -36,11 +43,15 @@ class BookingStore extends ChangeNotifier {
         return;
       }
       final loadedBookings = await _repository.fetchAll();
+      final loadedBlockedSlots = await _blockedSlotRepository.fetchAll();
       final autoApprove = await _settingsStorage.loadAutoApprove();
 
       _bookings
         ..clear()
         ..addAll(loadedBookings);
+      _blockedSlots
+        ..clear()
+        ..addAll(loadedBlockedSlots);
       if (autoApprove != null) {
         _autoApprove = autoApprove;
       }
@@ -64,6 +75,26 @@ class BookingStore extends ChangeNotifier {
   Future<void> addBooking(Booking booking) async {
     final created = await _repository.create(booking);
     _bookings.insert(0, created);
+    notifyListeners();
+  }
+
+  Future<void> addBlockedSlot(DateTime date, {String? timeLabel}) async {
+    final created =
+        await _blockedSlotRepository.create(date, timeLabel: timeLabel);
+    _blockedSlots.add(created);
+    notifyListeners();
+  }
+
+  Future<void> removeBlockedSlot(DateTime date, {String? timeLabel}) async {
+    await _blockedSlotRepository.delete(date, timeLabel: timeLabel);
+    _blockedSlots.removeWhere((slot) {
+      final sameDay =
+          slot.date.year == date.year &&
+          slot.date.month == date.month &&
+          slot.date.day == date.day;
+      final sameTime = slot.timeLabel == timeLabel;
+      return sameDay && sameTime;
+    });
     notifyListeners();
   }
 
