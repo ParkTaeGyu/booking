@@ -28,8 +28,8 @@ class SupabaseBookingRepository implements BookingRepository {
       List<dynamic> data;
       if (response is List) {
         data = response;
-      } else if (response is Map && response['data'] is List) {
-        data = response['data'] as List<dynamic>;
+      } else if (response is Map && (response as Map)['data'] is List) {
+        data = (response as Map)['data'] as List<dynamic>;
       } else {
         // ignore: avoid_print
         print('[Supabase] fetchAll unexpected response: ${response.runtimeType}');
