@@ -24,7 +24,7 @@ class WeeklyCalendar extends StatelessWidget {
   Widget build(BuildContext context) {
     final today = DateTime.now();
     final startOfWeek = _startOfWeek(DateTime(today.year, today.month, today.day));
-    const weekCount = 8;
+    const weekCount = 53;
 
     return Card(
       child: Padding(
