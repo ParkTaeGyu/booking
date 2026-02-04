@@ -25,13 +25,18 @@ class SupabaseBookingRepository implements BookingRepository {
         return [];
       }
 
-      if (response is! List) {
+      List<dynamic> data;
+      if (response is List) {
+        data = response;
+      } else if (response is Map && response['data'] is List) {
+        data = response['data'] as List<dynamic>;
+      } else {
         // ignore: avoid_print
         print('[Supabase] fetchAll unexpected response: ${response.runtimeType}');
         return [];
       }
 
-      return response
+      return data
           .whereType<Map<String, dynamic>>()
           .map(Booking.fromMap)
           .toList();
@@ -41,6 +46,12 @@ class SupabaseBookingRepository implements BookingRepository {
       print('[Supabase] fetchAll error: ${error.code} ${error.message}');
       // ignore: avoid_print
       print('[Supabase] details: ${error.details} hint: ${error.hint}');
+      rethrow;
+    } catch (error, stack) {
+      // ignore: avoid_print
+      print('[Supabase] fetchAll unexpected error: $error');
+      // ignore: avoid_print
+      print(stack);
       rethrow;
     }
   }
