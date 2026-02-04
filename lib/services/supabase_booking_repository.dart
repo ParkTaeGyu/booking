@@ -15,11 +15,15 @@ class SupabaseBookingRepository implements BookingRepository {
     try {
       final response = await _client
           .from(_table)
-          .select<List<Map<String, dynamic>>>()
+          .select()
           .order('date', ascending: true)
           .order('time_label', ascending: true);
 
-      return response.map(Booking.fromMap).toList();
+      final data = (response as List?) ?? <dynamic>[];
+      return data
+          .whereType<Map<String, dynamic>>()
+          .map(Booking.fromMap)
+          .toList();
     } on PostgrestException catch (error) {
       // Surface detailed error for debugging (visible in console).
       // ignore: avoid_print
