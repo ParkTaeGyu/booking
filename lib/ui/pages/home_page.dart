@@ -83,7 +83,7 @@ class HomePage extends StatelessWidget {
                                       onStylesTap: () {
                                         Navigator.of(context).push(
                                           MaterialPageRoute(
-                                            builder: (_) => const StylesPage(),
+                                            builder: (_) => StylesPage(store: store),
                                           ),
                                         );
                                       },
