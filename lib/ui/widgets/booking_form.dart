@@ -261,7 +261,10 @@ class _BookingFormState extends State<BookingForm> {
               TimeSlotPicker(
                 slots: slots,
                 selectedTime: _selectedTime,
-                isTaken: (time) => _isTaken(time) || _isBlocked(time),
+                isTaken: (time) =>
+                    _isTaken(time) ||
+                    _isBlocked(time) ||
+                    _isPastSlot(_selectedDate, time),
                 allDisabled: _isDayBlocked(_selectedDate),
                 onSelected: (time) {
                   setState(() => _selectedTime = time);
