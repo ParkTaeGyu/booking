@@ -147,7 +147,7 @@ class _AdminPanelState extends State<AdminPanel> {
                 context: context,
                 initialDate: _filterTo ?? _normalizeDate(DateTime.now()),
                 firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                lastDate: DateTime.now().add(const Duration(days: 365)),
+                lastDate: _normalizeDate(DateTime.now()),
               );
               if (picked != null) {
                 setState(() => _filterTo = picked);
