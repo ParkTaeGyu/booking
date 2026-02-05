@@ -146,7 +146,9 @@ class DropdownField extends StatelessWidget {
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
-              value: value == null || value!.isEmpty ? null : value,
+              value: value != null && value!.isNotEmpty && items.contains(value)
+                  ? value
+                  : null,
               isExpanded: true,
               hint: hint == null ? null : Text(hint!),
               items: items.map((item) {
