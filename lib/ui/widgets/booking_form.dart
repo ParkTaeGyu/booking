@@ -396,6 +396,7 @@ class _BookingFormState extends State<BookingForm> {
 
   List<String> _availableSlots(DateTime date) {
     return _generateSlotsForDate(date)
+        .where((time) => !_isPastSlot(date, time))
         .where(
           (time) => !widget.bookings.any((booking) {
             return booking.status == BookingStatus.confirmed &&
@@ -409,6 +410,22 @@ class _BookingFormState extends State<BookingForm> {
           }),
         )
         .toList();
+  }
+
+  bool _isPastSlot(DateTime date, String time) {
+    final today = _normalizeDate(DateTime.now());
+    if (!_sameDay(date, today)) return false;
+    final now = DateTime.now();
+    final slotMinutes = _timeToMinutes(time);
+    final nowMinutes = now.hour * 60 + now.minute;
+    return slotMinutes <= nowMinutes;
+  }
+
+  int _timeToMinutes(String label) {
+    final parts = label.split(':');
+    final hour = int.tryParse(parts[0]) ?? 0;
+    final minute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
+    return hour * 60 + minute;
   }
 
   void _submit() {
