@@ -47,7 +47,8 @@ class AdminPanel extends StatefulWidget {
 class _AdminPanelState extends State<AdminPanel> {
   AdminFilter _filter = AdminFilter.all;
   AdminSort _sort = AdminSort.dateAsc;
-  DateTime? _filterDate;
+  DateTime? _filterFrom;
+  DateTime? _filterTo;
   DateTime _selectedDate = DateTime.now();
   final PageController _weekController = PageController();
 
@@ -124,17 +125,32 @@ class _AdminPanelState extends State<AdminPanel> {
           Text('예약 관리', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
           _DateFilterBar(
-            selectedDate: _filterDate,
-            onClear: () => setState(() => _filterDate = null),
-            onPick: () async {
+            fromDate: _filterFrom,
+            toDate: _filterTo,
+            onClear: () => setState(() {
+              _filterFrom = null;
+              _filterTo = null;
+            }),
+            onPickFrom: () async {
               final picked = await showDatePicker(
                 context: context,
-                initialDate: _filterDate ?? _normalizeDate(DateTime.now()),
+                initialDate: _filterFrom ?? _normalizeDate(DateTime.now()),
                 firstDate: DateTime.now().subtract(const Duration(days: 365)),
                 lastDate: DateTime.now().add(const Duration(days: 365)),
               );
               if (picked != null) {
-                setState(() => _filterDate = picked);
+                setState(() => _filterFrom = picked);
+              }
+            },
+            onPickTo: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: _filterTo ?? _normalizeDate(DateTime.now()),
+                firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
+              );
+              if (picked != null) {
+                setState(() => _filterTo = picked);
               }
             },
           ),
@@ -178,11 +194,18 @@ class _AdminPanelState extends State<AdminPanel> {
   }
 
   List<Booking> _applyFilter(List<Booking> source) {
-    final base = _filterDate == null
-        ? source
-        : source
-            .where((booking) => _sameDay(booking.date, _filterDate!))
-            .toList();
+    final base = source.where((booking) {
+      if (_filterFrom == null && _filterTo == null) return true;
+      final date = _normalizeDate(booking.date);
+      if (_filterFrom != null &&
+          date.isBefore(_normalizeDate(_filterFrom!))) {
+        return false;
+      }
+      if (_filterTo != null && date.isAfter(_normalizeDate(_filterTo!))) {
+        return false;
+      }
+      return true;
+    }).toList();
     switch (_filter) {
       case AdminFilter.all:
         return List.of(base);
@@ -718,13 +741,17 @@ class _AdminFilters extends StatelessWidget {
 
 class _DateFilterBar extends StatelessWidget {
   const _DateFilterBar({
-    required this.selectedDate,
-    required this.onPick,
+    required this.fromDate,
+    required this.toDate,
+    required this.onPickFrom,
+    required this.onPickTo,
     required this.onClear,
   });
 
-  final DateTime? selectedDate;
-  final VoidCallback onPick;
+  final DateTime? fromDate;
+  final DateTime? toDate;
+  final VoidCallback onPickFrom;
+  final VoidCallback onPickTo;
   final VoidCallback onClear;
 
   @override
@@ -735,9 +762,7 @@ class _DateFilterBar extends StatelessWidget {
         child: Row(
           children: [
             Text(
-              selectedDate == null
-                  ? '날짜 필터 없음'
-                  : '선택 날짜 ${formatDate(selectedDate!)}',
+              _label(),
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
@@ -745,11 +770,16 @@ class _DateFilterBar extends StatelessWidget {
             ),
             const Spacer(),
             OutlinedButton(
-              onPressed: onPick,
-              child: const Text('날짜 선택'),
+              onPressed: onPickFrom,
+              child: const Text('시작일'),
             ),
             const SizedBox(width: 8),
-            if (selectedDate != null)
+            OutlinedButton(
+              onPressed: onPickTo,
+              child: const Text('종료일'),
+            ),
+            const SizedBox(width: 8),
+            if (fromDate != null || toDate != null)
               TextButton(
                 onPressed: onClear,
                 child: const Text('해제'),
@@ -758,6 +788,13 @@ class _DateFilterBar extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _label() {
+    if (fromDate == null && toDate == null) return '기간 필터 없음';
+    final fromText = fromDate == null ? '미지정' : formatDate(fromDate!);
+    final toText = toDate == null ? '미지정' : formatDate(toDate!);
+    return '기간 $fromText ~ $toText';
   }
 }
 
