@@ -34,8 +34,8 @@ class AdminPanel extends StatefulWidget {
   final int confirmedCount;
   final ValueChanged<String> onApprove;
   final ValueChanged<String> onReject;
-  final ValueChanged<Booking> onUpdate;
-  final ValueChanged<String> onDelete;
+  final Future<void> Function(Booking) onUpdate;
+  final Future<void> Function(String) onDelete;
   final void Function(DateTime date, {String? timeLabel}) onBlockSlot;
   final void Function(DateTime date, {String? timeLabel}) onUnblockSlot;
 
