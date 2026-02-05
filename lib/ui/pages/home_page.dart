@@ -214,15 +214,15 @@ class _RouteTiles extends StatelessWidget {
     final children = [
       _RouteCard(
         title: '예약 신청 (고객)',
-        subtitle: '원하는 시간과 서비스를 선택해 예약을 신청합니다.',
-        bulletPoints: const ['30분 단위 예약', '자동확정 옵션', '시간 선택'],
+        subtitle: '카테고리별 서비스를 선택해 예약을 신청합니다.',
+        bulletPoints: const ['30분 단위 예약', '서비스 다중 선택', '자동확정 옵션'],
         icon: Icons.event_available,
         onTap: onCustomerTap,
       ),
       _RouteCard(
         title: '헤어 스타일 소개',
-        subtitle: '추천 스타일 10선을 사진과 함께 확인합니다.',
-        bulletPoints: const ['임시 이미지', '가격 안내', '카드형 레이아웃'],
+        subtitle: '카테고리별 서비스와 가격 정보를 확인합니다.',
+        bulletPoints: const ['DB 연동 서비스', '카테고리 정렬', '가격 표시'],
         icon: Icons.style,
         onTap: onStylesTap,
       ),
