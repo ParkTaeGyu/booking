@@ -103,6 +103,9 @@ class BookingStore extends ChangeNotifier {
           slot.date.year == date.year &&
           slot.date.month == date.month &&
           slot.date.day == date.day;
+      if (timeLabel == null) {
+        return sameDay;
+      }
       final sameTime = slot.timeLabel == timeLabel;
       return sameDay && sameTime;
     });
