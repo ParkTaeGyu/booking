@@ -26,20 +26,23 @@ class AdminPage extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: SizedBox.expand(
-                child: AdminPanel(
-                  bookings: store.bookings,
-                  blockedSlots: store.blockedSlots,
-                  pendingCount: store.pendingCount,
-                  confirmedCount: store.confirmedCount,
-                  onApprove: (id) =>
+                  child: AdminPanel(
+                    bookings: store.bookings,
+                    blockedSlots: store.blockedSlots,
+                    services: store.services,
+                    pendingCount: store.pendingCount,
+                    confirmedCount: store.confirmedCount,
+                    onApprove: (id) =>
                       store.updateStatus(id, BookingStatus.confirmed),
-                  onReject: (id) =>
+                    onReject: (id) =>
                       store.updateStatus(id, BookingStatus.rejected),
-                  onBlockSlot: (date, {timeLabel}) =>
+                    onUpdate: store.updateBooking,
+                    onDelete: store.deleteBooking,
+                    onBlockSlot: (date, {timeLabel}) =>
                       store.addBlockedSlot(date, timeLabel: timeLabel),
-                  onUnblockSlot: (date, {timeLabel}) =>
+                    onUnblockSlot: (date, {timeLabel}) =>
                       store.removeBlockedSlot(date, timeLabel: timeLabel),
-                ),
+                  ),
               ),
             ),
           ),

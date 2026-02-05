@@ -147,4 +147,79 @@ class SupabaseBookingRepository implements BookingRepository {
       rethrow;
     }
   }
+
+  @override
+  Future<Booking> update(Booking booking) async {
+    try {
+      final payload = {
+        'customer_name': booking.customerName,
+        'phone': booking.phone,
+        'gender': booking.gender,
+        'service': booking.service,
+        'service_price': booking.servicePrice,
+        'date': booking.date.toIso8601String().split('T').first,
+        'time_label': booking.timeLabel,
+        'status': booking.status.name,
+        'auto_approved': booking.autoApproved,
+      };
+      final response = await _client
+          .from(_table)
+          .update(payload)
+          .eq('id', booking.id)
+          .select()
+          .single();
+
+      await _client.from('booking_items').delete().eq('booking_id', booking.id);
+      if (booking.items.isNotEmpty) {
+        final itemsPayload = booking.items
+            .map(
+              (item) => {
+                'booking_id': booking.id,
+                'service_id': item.serviceId,
+                'service_name': item.name,
+                'service_price': item.price,
+                'category': item.category,
+              },
+            )
+            .toList();
+        await _client.from('booking_items').insert(itemsPayload);
+      }
+
+      final updated = Booking.fromMap(response);
+      return Booking(
+        id: updated.id,
+        customerName: updated.customerName,
+        phone: updated.phone,
+        gender: updated.gender,
+        service: updated.service,
+        servicePrice: updated.servicePrice,
+        items: booking.items,
+        date: updated.date,
+        timeLabel: updated.timeLabel,
+        status: updated.status,
+        createdAt: updated.createdAt,
+        autoApproved: updated.autoApproved,
+        note: updated.note,
+      );
+    } on PostgrestException catch (error) {
+      // ignore: avoid_print
+      print('[Supabase] update error: ${error.code} ${error.message}');
+      // ignore: avoid_print
+      print('[Supabase] details: ${error.details} hint: ${error.hint}');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    try {
+      await _client.from(_table).delete().eq('id', id);
+    } on PostgrestException catch (error) {
+      // ignore: avoid_print
+      print('[Supabase] delete error: ${error.code} ${error.message}');
+      // ignore: avoid_print
+      print('[Supabase] details: ${error.details} hint: ${error.hint}');
+      rethrow;
+    }
+  }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/booking.dart';
 import '../../models/blocked_slot.dart';
+import '../../models/service_item.dart';
 import '../../utils/holiday_calendar.dart';
 import 'common.dart';
 import 'weekly_calendar.dart';
@@ -15,20 +16,26 @@ class AdminPanel extends StatefulWidget {
     super.key,
     required this.bookings,
     required this.blockedSlots,
+    required this.services,
     required this.pendingCount,
     required this.confirmedCount,
     required this.onApprove,
     required this.onReject,
+    required this.onUpdate,
+    required this.onDelete,
     required this.onBlockSlot,
     required this.onUnblockSlot,
   });
 
   final List<Booking> bookings;
   final List<BlockedSlot> blockedSlots;
+  final List<ServiceItem> services;
   final int pendingCount;
   final int confirmedCount;
   final ValueChanged<String> onApprove;
   final ValueChanged<String> onReject;
+  final ValueChanged<Booking> onUpdate;
+  final ValueChanged<String> onDelete;
   final void Function(DateTime date, {String? timeLabel}) onBlockSlot;
   final void Function(DateTime date, {String? timeLabel}) onUnblockSlot;
 
@@ -141,6 +148,8 @@ class _AdminPanelState extends State<AdminPanel> {
                   booking: booking,
                   onApprove: () => widget.onApprove(booking.id),
                   onReject: () => widget.onReject(booking.id),
+                  onEdit: () => _openEditDialog(context, booking),
+                  onDelete: () => _confirmDelete(context, booking),
                 );
               },
             ),
@@ -188,6 +197,273 @@ class _AdminPanelState extends State<AdminPanel> {
     return items;
   }
 
+  Future<void> _openEditDialog(BuildContext context, Booking booking) async {
+    if (widget.services.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('서비스 목록을 불러오는 중입니다.')),
+      );
+      return;
+    }
+
+    final nameController = TextEditingController(text: booking.customerName);
+    final phoneController = TextEditingController(text: booking.phone);
+    var selectedGender = booking.gender;
+    var selectedStatus = booking.status;
+    var selectedDate = booking.date;
+    var selectedTime = booking.timeLabel;
+
+    final categories = _categories();
+    final initialItems = _resolveInitialItems(booking);
+    final selectedServices = <String, ServiceItem>{
+      for (final item in initialItems) item.id: item,
+    };
+    var selectedCategory = initialItems.isNotEmpty
+        ? initialItems.first.category
+        : (categories.isNotEmpty ? categories.first : '');
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final servicesForCategory =
+                _servicesForCategory(selectedCategory);
+            final totalPrice = selectedServices.values.fold<int>(
+              0,
+              (sum, item) => sum + item.price,
+            );
+            final availableTimes = _availableSlotsForDate(
+              selectedDate,
+              excludeId: booking.id,
+            );
+            final times = List<String>.from(availableTimes);
+            if (!times.contains(selectedTime)) {
+              times.insert(0, selectedTime);
+            }
+
+            return AlertDialog(
+              title: const Text('예약 수정'),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    InputField(
+                      label: '이름',
+                      controller: nameController,
+                      hint: '예) 김지아',
+                    ),
+                    const SizedBox(height: 12),
+                    InputField(
+                      label: '연락처',
+                      controller: phoneController,
+                      hint: '01012345678',
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownField(
+                      label: '성별',
+                      value: selectedGender,
+                      items: const ['남성', '여성'],
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setDialogState(() => selectedGender = value);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownField(
+                      label: '상태',
+                      value: selectedStatus.name,
+                      items: BookingStatus.values
+                          .map((status) => status.name)
+                          .toList(),
+                      itemBuilder: (context, item) {
+                        final status = BookingStatus.values.firstWhere(
+                          (value) => value.name == item,
+                          orElse: () => BookingStatus.pending,
+                        );
+                        return Text(statusMeta(status).label);
+                      },
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setDialogState(() {
+                          selectedStatus = BookingStatus.values.firstWhere(
+                            (status) => status.name == value,
+                            orElse: () => BookingStatus.pending,
+                          );
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: selectedDate,
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(
+                            const Duration(days: 365),
+                          ),
+                        );
+                        if (picked != null) {
+                          setDialogState(() {
+                            selectedDate = picked;
+                            final nextTimes = _availableSlotsForDate(
+                              selectedDate,
+                              excludeId: booking.id,
+                            );
+                            selectedTime =
+                                nextTimes.isNotEmpty ? nextTimes.first : '';
+                          });
+                        }
+                      },
+                      child: Text(
+                        '날짜 변경 · ${formatDate(selectedDate)}',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownField(
+                      label: '시간',
+                      value: selectedTime,
+                      items: times,
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setDialogState(() => selectedTime = value);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownField(
+                      label: '카테고리',
+                      value: selectedCategory,
+                      items: categories,
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setDialogState(() {
+                          selectedCategory = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _ServiceMultiSelect(
+                      services: servicesForCategory,
+                      selected: selectedServices,
+                      onToggle: (service) {
+                        setDialogState(() {
+                          if (selectedServices.containsKey(service.id)) {
+                            selectedServices.remove(service.id);
+                          } else {
+                            selectedServices[service.id] = service;
+                          }
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '총액 ${formatPrice(totalPrice)}',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: Colors.black54),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('취소'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (nameController.text.trim().isEmpty ||
+                        phoneController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('이름/연락처를 입력해주세요.')),
+                      );
+                      return;
+                    }
+                    if (selectedServices.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('서비스를 선택해주세요.')),
+                      );
+                      return;
+                    }
+                    if (selectedTime.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('시간을 선택해주세요.')),
+                      );
+                      return;
+                    }
+
+                    final items = selectedServices.values.toList();
+                    final summary = _buildServiceSummary(items);
+                    final price = items.fold<int>(
+                      0,
+                      (sum, item) => sum + item.price,
+                    );
+                    final updated = Booking(
+                      id: booking.id,
+                      customerName: nameController.text.trim(),
+                      phone: phoneController.text.trim(),
+                      gender: selectedGender,
+                      service: summary,
+                      servicePrice: price,
+                      items: items
+                          .map(
+                            (item) => BookingItem(
+                              serviceId: item.id,
+                              name: item.name,
+                              price: item.price,
+                              category: item.category,
+                            ),
+                          )
+                          .toList(),
+                      date: selectedDate,
+                      timeLabel: selectedTime,
+                      status: selectedStatus,
+                      createdAt: booking.createdAt,
+                      autoApproved: booking.autoApproved,
+                      note: booking.note,
+                    );
+                    await widget.onUpdate(updated);
+                    if (context.mounted) {
+                      Navigator.pop(dialogContext);
+                    }
+                  },
+                  child: const Text('저장'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _confirmDelete(BuildContext context, Booking booking) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('예약 삭제'),
+          content: Text('${booking.customerName} 예약을 삭제할까요?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('취소'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('삭제'),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed == true) {
+      await widget.onDelete(booking.id);
+    }
+  }
+
   int _compareDateTime(Booking a, Booking b) {
     final dateCompare = DateTime(
       a.date.year,
@@ -207,6 +483,50 @@ class _AdminPanelState extends State<AdminPanel> {
 
   bool _sameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  List<String> _categories() {
+    final seen = <String>{};
+    final categories = <String>[];
+    for (final service in widget.services) {
+      if (seen.add(service.category)) {
+        categories.add(service.category);
+      }
+    }
+    return categories;
+  }
+
+  List<ServiceItem> _servicesForCategory(String category) {
+    if (category.isEmpty) return const [];
+    return widget.services
+        .where((service) => service.category == category)
+        .toList();
+  }
+
+  List<ServiceItem> _resolveInitialItems(Booking booking) {
+    if (booking.items.isNotEmpty) return booking.items.map((item) {
+      return widget.services.firstWhere(
+        (service) => service.id == item.serviceId,
+        orElse: () => ServiceItem(
+          id: item.serviceId,
+          name: item.name,
+          price: item.price,
+          category: item.category,
+          orderIndex: 0,
+          active: true,
+        ),
+      );
+    }).toList();
+    final matched = widget.services.where(
+      (service) => service.name == booking.service,
+    );
+    return matched.isNotEmpty ? matched.toList() : const [];
+  }
+
+  String _buildServiceSummary(List<ServiceItem> items) {
+    if (items.isEmpty) return '';
+    if (items.length == 1) return items.first.name;
+    return '${items.first.name} 외 ${items.length - 1}건';
   }
 
   DateTime _normalizeDate(DateTime date) {
@@ -233,6 +553,21 @@ class _AdminPanelState extends State<AdminPanel> {
     return widget.blockedSlots.any(
       (slot) => _sameDay(slot.date, date) && slot.timeLabel == time,
     );
+  }
+
+  List<String> _availableSlotsForDate(DateTime date, {String? excludeId}) {
+    if (_isDayBlocked(date)) return [];
+    return _generateSlotsForDate(date)
+        .where((time) => !_isSlotBlocked(date, time))
+        .where((time) {
+          return !widget.bookings.any((booking) {
+            if (excludeId != null && booking.id == excludeId) return false;
+            return booking.status == BookingStatus.confirmed &&
+                _sameDay(booking.date, date) &&
+                booking.timeLabel == time;
+          });
+        })
+        .toList();
   }
 
   bool _isDateDisabled(DateTime date) {
@@ -445,11 +780,15 @@ class _AdminBookingCard extends StatelessWidget {
     required this.booking,
     required this.onApprove,
     required this.onReject,
+    required this.onEdit,
+    required this.onDelete,
   });
 
   final Booking booking;
   final VoidCallback onApprove;
   final VoidCallback onReject;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -554,6 +893,36 @@ class _AdminBookingCard extends StatelessWidget {
                   ],
                 ),
               ),
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: onEdit,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.black,
+                        side: const BorderSide(color: Colors.black26),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text('수정'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: onDelete,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.redAccent,
+                        side: const BorderSide(color: Colors.redAccent),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text('삭제'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -798,6 +1167,60 @@ class _DaySchedulePanel extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ServiceMultiSelect extends StatelessWidget {
+  const _ServiceMultiSelect({
+    required this.services,
+    required this.selected,
+    required this.onToggle,
+  });
+
+  final List<ServiceItem> services;
+  final Map<String, ServiceItem> selected;
+  final ValueChanged<ServiceItem> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    if (services.isEmpty) {
+      return Text(
+        '해당 카테고리에 서비스가 없습니다.',
+        style: Theme.of(context)
+            .textTheme
+            .bodyMedium
+            ?.copyWith(color: Colors.black45),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: services.map((service) {
+        final isSelected = selected.containsKey(service.id);
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2)
+                : const Color(0xFFF7F4EF),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: CheckboxListTile(
+            value: isSelected,
+            dense: true,
+            onChanged: (_) => onToggle(service),
+            title: Text(service.name),
+            subtitle: Text(
+              formatPrice(service.price),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: Colors.black45),
+            ),
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
+        );
+      }).toList(),
     );
   }
 }

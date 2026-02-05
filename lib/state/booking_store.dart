@@ -119,4 +119,18 @@ class BookingStore extends ChangeNotifier {
     _bookings[index] = _bookings[index].copyWith(status: status);
     notifyListeners();
   }
+
+  Future<void> updateBooking(Booking booking) async {
+    final index = _bookings.indexWhere((b) => b.id == booking.id);
+    if (index == -1) return;
+    final updated = await _repository.update(booking);
+    _bookings[index] = updated;
+    notifyListeners();
+  }
+
+  Future<void> deleteBooking(String id) async {
+    await _repository.delete(id);
+    _bookings.removeWhere((booking) => booking.id == id);
+    notifyListeners();
+  }
 }

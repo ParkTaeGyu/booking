@@ -25,6 +25,7 @@ alter table public.bookings enable row level security;
 drop policy if exists bookings_insert_public on public.bookings;
 drop policy if exists bookings_read_public on public.bookings;
 drop policy if exists bookings_update_public on public.bookings;
+drop policy if exists bookings_delete_public on public.bookings;
 
 create policy bookings_insert_public
   on public.bookings
@@ -44,3 +45,9 @@ create policy bookings_update_public
   to anon, authenticated
   using (true)
   with check (true);
+
+create policy bookings_delete_public
+  on public.bookings
+  for delete
+  to anon, authenticated
+  using (true);
