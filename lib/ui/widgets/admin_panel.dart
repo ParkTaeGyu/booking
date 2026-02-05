@@ -46,7 +46,7 @@ class AdminPanel extends StatefulWidget {
 
 class _AdminPanelState extends State<AdminPanel> {
   AdminFilter _filter = AdminFilter.all;
-  AdminSort _sort = AdminSort.dateAsc;
+  AdminSort _sort = AdminSort.dateDesc;
   DateTime? _filterFrom;
   DateTime? _filterTo;
   DateTime _selectedDate = DateTime.now();
@@ -854,14 +854,14 @@ class _SortDropdown extends StatelessWidget {
         child: DropdownButton<AdminSort>(
           value: value,
           items: const [
-            DropdownMenuItem(value: AdminSort.dateAsc, child: Text('예약일 오름차순')),
+            DropdownMenuItem(value: AdminSort.dateAsc, child: Text('예약일 빠른순')),
             DropdownMenuItem(
               value: AdminSort.dateDesc,
-              child: Text('예약일 내림차순'),
+              child: Text('예약일 최신순'),
             ),
             DropdownMenuItem(
               value: AdminSort.createdDesc,
-              child: Text('신청시간 최신순'),
+              child: Text('신청일 최신순'),
             ),
           ],
           onChanged: (value) {
