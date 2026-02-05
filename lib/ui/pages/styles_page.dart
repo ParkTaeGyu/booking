@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/service_item.dart';
 import '../../state/booking_store.dart';
+import '../../utils/service_sort.dart';
 import '../widgets/common.dart';
 
 class StylesPage extends StatelessWidget {
@@ -16,6 +17,8 @@ class StylesPage extends StatelessWidget {
       builder: (context, _) {
         final services = store.services;
         final grouped = _groupByCategory(services);
+        final orderedCategories = grouped.keys.toList()
+          ..sort(compareServiceCategory);
         return Scaffold(
           appBar: AppBar(
             title: const Text('헤어 스타일 소개'),
@@ -63,9 +66,8 @@ class StylesPage extends StatelessWidget {
                               return SingleChildScrollView(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: grouped.entries.map((entry) {
-                                    final category = entry.key;
-                                    final items = entry.value;
+                                  children: orderedCategories.map((category) {
+                                    final items = grouped[category] ?? const [];
                                     return Padding(
                                       padding: const EdgeInsets.only(bottom: 24),
                                       child: Column(

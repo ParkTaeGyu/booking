@@ -4,6 +4,7 @@ import '../../models/booking.dart';
 import '../../models/blocked_slot.dart';
 import '../../models/service_item.dart';
 import '../../utils/holiday_calendar.dart';
+import '../../utils/service_sort.dart';
 import 'common.dart';
 import 'weekly_calendar.dart';
 
@@ -486,14 +487,7 @@ class _AdminPanelState extends State<AdminPanel> {
   }
 
   List<String> _categories() {
-    final seen = <String>{};
-    final categories = <String>[];
-    for (final service in widget.services) {
-      if (seen.add(service.category)) {
-        categories.add(service.category);
-      }
-    }
-    return categories;
+    return sortedCategories(widget.services);
   }
 
   List<ServiceItem> _servicesForCategory(String category) {
