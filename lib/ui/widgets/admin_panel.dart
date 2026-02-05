@@ -47,6 +47,7 @@ class AdminPanel extends StatefulWidget {
 class _AdminPanelState extends State<AdminPanel> {
   AdminFilter _filter = AdminFilter.all;
   AdminSort _sort = AdminSort.dateAsc;
+  DateTime? _filterDate;
   DateTime _selectedDate = DateTime.now();
   final PageController _weekController = PageController();
 
@@ -122,6 +123,22 @@ class _AdminPanelState extends State<AdminPanel> {
           const SizedBox(height: 20),
           Text('예약 관리', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
+          _DateFilterBar(
+            selectedDate: _filterDate,
+            onClear: () => setState(() => _filterDate = null),
+            onPick: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: _filterDate ?? _normalizeDate(DateTime.now()),
+                firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
+              );
+              if (picked != null) {
+                setState(() => _filterDate = picked);
+              }
+            },
+          ),
+          const SizedBox(height: 12),
           _AdminFilters(
             filter: _filter,
             sort: _sort,
@@ -161,19 +178,24 @@ class _AdminPanelState extends State<AdminPanel> {
   }
 
   List<Booking> _applyFilter(List<Booking> source) {
+    final base = _filterDate == null
+        ? source
+        : source
+            .where((booking) => _sameDay(booking.date, _filterDate!))
+            .toList();
     switch (_filter) {
       case AdminFilter.all:
-        return List.of(source);
+        return List.of(base);
       case AdminFilter.pending:
-        return source
+        return base
             .where((booking) => booking.status == BookingStatus.pending)
             .toList();
       case AdminFilter.confirmed:
-        return source
+        return base
             .where((booking) => booking.status == BookingStatus.confirmed)
             .toList();
       case AdminFilter.rejected:
-        return source
+        return base
             .where((booking) => booking.status == BookingStatus.rejected)
             .toList();
     }
@@ -687,6 +709,51 @@ class _AdminFilters extends StatelessWidget {
                 _SortDropdown(value: sort, onChanged: onSortChanged),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DateFilterBar extends StatelessWidget {
+  const _DateFilterBar({
+    required this.selectedDate,
+    required this.onPick,
+    required this.onClear,
+  });
+
+  final DateTime? selectedDate;
+  final VoidCallback onPick;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            Text(
+              selectedDate == null
+                  ? '날짜 필터 없음'
+                  : '선택 날짜 ${formatDate(selectedDate!)}',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: Colors.black54),
+            ),
+            const Spacer(),
+            OutlinedButton(
+              onPressed: onPick,
+              child: const Text('날짜 선택'),
+            ),
+            const SizedBox(width: 8),
+            if (selectedDate != null)
+              TextButton(
+                onPressed: onClear,
+                child: const Text('해제'),
+              ),
           ],
         ),
       ),
