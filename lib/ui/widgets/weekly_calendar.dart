@@ -156,7 +156,9 @@ class WeeklyCalendar extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  '${selectedDate.year}.${selectedDate.month.toString().padLeft(2, '0')}.${selectedDate.day.toString().padLeft(2, '0')}',
+                  '${selectedDate.year}.'
+                  '${selectedDate.month.toString().padLeft(2, '0')}.'
+                  '${selectedDate.day.toString().padLeft(2, '0')}',
                   style: Theme.of(context)
                       .textTheme
                       .bodyMedium

@@ -6,6 +6,8 @@ import '../../models/blocked_slot.dart';
 import '../../models/service_item.dart';
 import '../../utils/holiday_calendar.dart';
 import '../../utils/service_sort.dart';
+import 'booking/booking_gender_picker.dart';
+import 'booking/booking_service_selector.dart';
 import 'common.dart';
 import 'time_slot_picker.dart';
 import 'weekly_calendar.dart';
@@ -203,31 +205,22 @@ class _BookingFormState extends State<BookingForm> {
                 },
               ),
               const SizedBox(height: 12),
-              _GenderPicker(
+              BookingGenderPicker(
                 value: _selectedGender,
                 onChanged: (value) {
                   setState(() => _selectedGender = value);
                 },
               ),
               const SizedBox(height: 12),
-              DropdownField(
-                label: '카테고리',
-                value: _selectedCategory,
-                items: categories,
-                hint: '카테고리 선택',
-                onChanged: (value) {
-                  if (value == null) return;
-                  if (value == _selectedCategory) return;
-                  setState(() {
-                    _selectedCategory = value;
-                  });
+              BookingServiceSelector(
+                categories: categories,
+                selectedCategory: _selectedCategory,
+                onCategoryChanged: (value) {
+                  setState(() => _selectedCategory = value);
                 },
-              ),
-              const SizedBox(height: 12),
-              _ServiceMultiSelect(
-                services: servicesForCategory,
-                selected: _selectedServices,
-                onToggle: (service) {
+                servicesForCategory: servicesForCategory,
+                selectedServices: _selectedServices,
+                onToggleService: (service) {
                   setState(() {
                     if (_selectedServices.containsKey(service.id)) {
                       _selectedServices.remove(service.id);
@@ -237,26 +230,8 @@ class _BookingFormState extends State<BookingForm> {
                   });
                   _syncCanSubmit();
                 },
+                totalPrice: totalPrice,
               ),
-              const SizedBox(height: 8),
-              Text(
-                '총액 ${formatPrice(totalPrice)}',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: Colors.black54),
-              ),
-              if (_selectedServices.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    _selectedServices.values.map((item) => item.name).join(', '),
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: Colors.black45),
-                  ),
-                ),
               const SizedBox(height: 12),
               TimeSlotPicker(
                 slots: slots,
@@ -503,137 +478,5 @@ class _BookingFormState extends State<BookingForm> {
     if (value.isEmpty) return false;
     if (!RegExp(r'^[0-9]+$').hasMatch(value)) return false;
     return value.length >= 10;
-  }
-}
-
-class _GenderPicker extends StatelessWidget {
-  const _GenderPicker({required this.value, required this.onChanged});
-
-  final String value;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('성별', style: Theme.of(context).textTheme.bodyMedium),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            _GenderChip(
-              label: '남성',
-              selected: value == '남성',
-              onTap: () => onChanged('남성'),
-            ),
-            const SizedBox(width: 8),
-            _GenderChip(
-              label: '여성',
-              selected: value == '여성',
-              onTap: () => onChanged('여성'),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _GenderChip extends StatelessWidget {
-  const _GenderChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: selected
-                ? Theme.of(context).colorScheme.secondary
-                : const Color(0xFFF7F4EF),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: selected
-                  ? Theme.of(context).colorScheme.secondary
-                  : Colors.transparent,
-            ),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: selected ? Colors.black : Colors.black87,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ServiceMultiSelect extends StatelessWidget {
-  const _ServiceMultiSelect({
-    required this.services,
-    required this.selected,
-    required this.onToggle,
-  });
-
-  final List<ServiceItem> services;
-  final Map<String, ServiceItem> selected;
-  final ValueChanged<ServiceItem> onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    if (services.isEmpty) {
-      return Text(
-        '해당 카테고리에 서비스가 없습니다.',
-        style: Theme.of(context)
-            .textTheme
-            .bodyMedium
-            ?.copyWith(color: Colors.black45),
-      );
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: services.map((service) {
-        final isSelected = selected.containsKey(service.id);
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2)
-                : const Color(0xFFF7F4EF),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: CheckboxListTile(
-            value: isSelected,
-            dense: true,
-            onChanged: (_) => onToggle(service),
-            title: Text(service.name),
-            subtitle: Text(
-              formatPrice(service.price),
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: Colors.black45),
-            ),
-            controlAffinity: ListTileControlAffinity.leading,
-          ),
-        );
-      }).toList(),
-    );
   }
 }
