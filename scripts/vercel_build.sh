@@ -13,6 +13,6 @@ fi
 ./flutter/bin/flutter --version
 ./flutter/bin/flutter config --enable-web
 
-./flutter/bin/flutter build web --release \
+./flutter/bin/flutter build web --release --web-renderer html \
   --dart-define=SUPABASE_URL="$SUPABASE_URL" \
   --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
